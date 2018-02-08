@@ -1,0 +1,15 @@
+{
+    "_copy_without_render": [
+        "docs/aibs_sphinx"
+    ], 
+    "_template": "git@github.com:AllenInstitute/pyproject_template", 
+    "email": "nicholasc@alleninstitute.org", 
+    "full_name": "Nicholas Cain", 
+    "project_name": "visual_coding_2p_analysis", 
+    "project_namespace": "", 
+    "project_short_description": "Visual Coding 2P analysis code", 
+    "project_slug": "visual_coding_2p_analysis", 
+    "repo_url": "https://github.com/AllenInstitute/visual_coding_2p_analysis", 
+    "user_name": "nicholasc", 
+    "version": "0.1.0"
+}
