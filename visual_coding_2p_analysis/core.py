@@ -27,9 +27,6 @@ def get_username():
 def get_save_path():
     '''provides the appropriate paths for a given user
         
-Parameters
-----------
-
 Returns
 -------
 save_path

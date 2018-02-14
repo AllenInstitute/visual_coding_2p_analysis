@@ -48,9 +48,6 @@ class StaticGratings(event_analysis):
     
     def get_stimulus_response(self):
         '''calculates the response to each stimulus trial. Calculates the mean response to each stimulus condition.
-        
-Parameters
-----------
 
 Returns
 -------
@@ -80,6 +77,17 @@ response trials:
                     response_trials[oi,si,phi,:,:subset.shape[0]] = subset.values.T        
         return sweep_events, mean_sweep_events, response_events, response_trials
 
+    def get_lifetime_sparseness(self):
+        '''computes lifetime sparseness of responses for all cells
+
+Returns
+-------
+lifetime sparseness
+        '''
+        response = self.response_events[:,1:,:,:,0].reshape(120, self.numbercells)
+        return ((1-(1/120.)*((np.power(response.sum(axis=0),2))/(np.power(response,2).sum(axis=0))))/(1-(1/120.)))
+
+    
     def get_osi(self, pref_sf, pref_phase, nc):
         '''computes orientation selectivity (cv) for cell
 
@@ -203,17 +211,15 @@ high cutoff sf from the curve fit
     def get_peak(self):
         '''creates a table of metrics for each cell
 
-Parameters
-----------
-
 Returns
 -------
 peak dataframe
         '''
         peak = pd.DataFrame(columns=('cell_specimen_id','pref_ori_sg','pref_sf_sg','pref_phase_sg','num_pref_trials_sg',
-                                     'responsive_sg','g_osi_sg','sfdi_sg','reliability_sg', 'fit_sf_sg','fit_sf_ind_sg',
+                                     'responsive_sg','g_osi_sg','sfdi_sg','reliability_sg','lifetime_sparseness_sg', 'fit_sf_sg','fit_sf_ind_sg',
                                      'sf_low_cutoff_sg','sf_high_cutoff_sg'), index=range(self.numbercells))
         
+        peak['lifetime_sparseness_sg'] = self.get_lifetime_sparseness()
         for nc in range(self.numbercells):
             pref_ori = np.where(self.response_events[:,1:,:,nc,0]==self.response_events[:,1:,:,nc,0].max())[0][0]
             pref_sf = np.where(self.response_events[:,1:,:,nc,0]==self.response_events[:,1:,:,nc,0].max())[1][0]

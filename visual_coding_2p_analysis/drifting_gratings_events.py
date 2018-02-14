@@ -40,9 +40,6 @@ class DriftingGratings(event_analysis):
     
     def get_stimulus_response(self):
         '''calculates the response to each stimulus trial. Calculates the mean response to each stimulus condition.
-        
-Parameters
-----------
 
 Returns
 -------
@@ -77,6 +74,16 @@ response trials:
                 response_events[oi,ti+1,:,2] = subset[subset>0].count().values
                 response_trials[oi,ti,:,:subset.shape[0]] = subset.values.T
         return sweep_events, mean_sweep_events, response_events, response_trials
+    
+    def get_lifetime_sparseness(self):
+        '''computes lifetime sparseness of responses for all cells
+
+Returns
+-------
+lifetime sparseness
+        '''
+        response = self.response_events[:,1:,:,0].reshape(40, self.numbercells)
+        return ((1-(1/40.)*((np.power(response.sum(axis=0),2))/(np.power(response,2).sum(axis=0))))/(1-(1/40.)))
     
     def get_osi(self, pref_tf, nc):
         '''computes orientation and direction selectivity (cv) for cell
@@ -206,18 +213,16 @@ high cutoff tf from the curve fit
     def get_peak(self):
         '''creates a table of metrics for each cell
 
-Parameters
-----------
-
 Returns
 -------
 peak dataframe
         '''
         print "Computing metrics"
         peak = pd.DataFrame(columns=('cell_specimen_id','pref_ori_dg','pref_tf_dg','num_pref_trials_dg','responsive_dg',
-                                     'g_osi_dg','g_dsi_dg','tfdi_dg','reliability_dg', 
+                                     'g_osi_dg','g_dsi_dg','tfdi_dg','reliability_dg','lifetime_sparseness_dg', 
                                      'fit_tf_dg','fit_tf_ind_dg','tf_low_cutoff_dg','tf_high_cutoff_dg'), index=range(self.numbercells))
         
+        peak['lifetime_sparseness_dg'] = self.get_lifetime_sparseness()
         for nc in range(self.numbercells):
             pref_ori = np.where(self.response_events[:,1:,nc,0]==self.response_events[:,1:,nc,0].max())[0][0]
             pref_tf = np.where(self.response_events[:,1:,nc,0]==self.response_events[:,1:,nc,0].max())[1][0]
