@@ -50,8 +50,7 @@ stim_table (pandas DataFrame)
 numbercells        
 specimen IDs
         '''
-    user_name= get_username()
-    manifest_path = manifest_path_dict[user_name]
+    manifest_path = get_manifest_path()
     from allensdk.core.brain_observatory_cache import BrainObservatoryCache
     boc = BrainObservatoryCache(manifest_file=manifest_path)
     data_set = boc.get_ophys_experiment_data(session_id)
@@ -79,8 +78,19 @@ l0 event traces (numpy array)
     l0_events = np.load(file_path)
     return l0_events
     
+def get_manifest_path():
+    '''provides the path to the manifest for the boc
+        
+Returns
+-------
+manifest path
+        '''
+    user_name= get_username()
+    return manifest_path_dict[user_name]
+
 def gauss_function(x, a, x0, sigma):
     return a*np.exp(-(x-x0)**2/(2*sigma**2))
 
 def exp_function(x, a, b, c):
     return a*np.exp(-b*x)+c
+

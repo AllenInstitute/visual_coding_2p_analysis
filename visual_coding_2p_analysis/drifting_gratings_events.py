@@ -72,7 +72,12 @@ response trials:
                 response_events[oi,ti+1,:,0] = subset.mean(axis=0)
                 response_events[oi,ti+1,:,1] = subset.std(axis=0)/np.sqrt(len(subset))
                 response_events[oi,ti+1,:,2] = subset[subset>0].count().values
-                response_trials[oi,ti,:,:subset.shape[0]] = subset.values.T
+                response_trials[oi,ti+1,:,:subset.shape[0]] = subset.values.T
+        subset = mean_sweep_events[np.isnan(self.stim_table.orientation)]
+        response_events[0,0,:,0] = subset.mean(axis=0)
+        response_events[0,0,:,1] = subset.std(axis=0)/np.sqrt(len(subset))
+        response_events[0,0,:,2] = subset[subset>0].count().values
+        #what to do about blank sweeps for the response_trials?
         return sweep_events, mean_sweep_events, response_events, response_trials
     
     def get_lifetime_sparseness(self):
@@ -253,8 +258,12 @@ peak dataframe
         store['peak'] = self.peak
         store.close()
         f = h5py.File(save_file, 'r+')
-        dset = f.create_dataset('response_events', data=self.response_events)
-        dset1 = f.create_dataset('response_trials', data=self.response_trials)
+        data = f['response_events']       # load the data
+        data[...] = self.response_events
+        data1 = f['response_trials']
+        data1[...] = self.response_trials
+#        dset = f.create_dataset('response_events', data=self.response_events)
+#        dset1 = f.create_dataset('response_trials', data=self.response_trials)
         f.close()
 
 

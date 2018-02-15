@@ -68,13 +68,17 @@ response trials:
         response_trials = np.empty((6,6,4,self.numbercells,50))
         response_trials[:] = np.NaN
         for oi, ori in enumerate(self.orivals):
-            for si, sf in enumerate(self.sfvals):
+            for si, sf in enumerate(self.sfvals[1:]):
                 for phi, phase in enumerate(self.phasevals):
                     subset = mean_sweep_events[(self.stim_table.orientation==ori)&(self.stim_table.spatial_frequency==sf)&(self.stim_table.phase==phase)]
-                    response_events[oi,si,phi,:,0] = subset.mean(axis=0)
-                    response_events[oi,si,phi,:,1] = subset.std(axis=0)/np.sqrt(len(subset))
-                    response_events[oi,si,phi,:,2] = subset[subset>0].count().values
-                    response_trials[oi,si,phi,:,:subset.shape[0]] = subset.values.T        
+                    response_events[oi,si+1,phi,:,0] = subset.mean(axis=0)
+                    response_events[oi,si+1,phi,:,1] = subset.std(axis=0)/np.sqrt(len(subset))
+                    response_events[oi,si+1,phi,:,2] = subset[subset>0].count().values
+                    response_trials[oi,si+1,phi,:,:subset.shape[0]] = subset.values.T        
+        subset= mean_sweep_events[np.isnan(self.stim_table.orientation)]
+        response_events[0,0,0,:,0] = subset.mean(axis=0)
+        response_events[0,0,0,:,1] = subset.std(axis=0)/np.sqrt(len(subset))
+        response_events[0,0,0,:,2] = subset[subset>0].count().values
         return sweep_events, mean_sweep_events, response_events, response_trials
 
     def get_lifetime_sparseness(self):
@@ -176,8 +180,8 @@ high cutoff sf from the curve fit
         sf_high_cutoff = np.NaN
         if pref_sf in range(1,4):
             try:
-                popt, pcov = curve_fit(gauss_function, range(5), sf_tuning, p0=[np.amax(sf_tuning), pref_sf, 1.], maxfev=2000)
-                sf_prediction = gauss_function(np.arange(0., 4.1, 0.1), *popt)
+                popt, pcov = curve_fit(core.gauss_function, range(5), sf_tuning, p0=[np.amax(sf_tuning), pref_sf, 1.], maxfev=2000)
+                sf_prediction = core.gauss_function(np.arange(0., 4.1, 0.1), *popt)
                 fit_sf_ind = popt[1]
                 fit_sf = 0.02*np.power(2,popt[1])
                 low_cut_ind = np.abs(sf_prediction-(sf_prediction.max()/2.))[:sf_prediction.argmax()].argmin()
@@ -194,8 +198,8 @@ high cutoff sf from the curve fit
             fit_sf_ind = pref_sf
             fit_sf = self.sfvals[pref_sf+1]
             try:
-                popt, pcov = curve_fit(exp_function, range(5), sf_tuning, p0=[np.amax(sf_tuning), 2., np.amin(sf_tuning)], maxfev=2000)
-                sf_prediction = exp_function(np.arange(0., 4.1, 0.1), *popt)
+                popt, pcov = curve_fit(core.exp_function, range(5), sf_tuning, p0=[np.amax(sf_tuning), 2., np.amin(sf_tuning)], maxfev=2000)
+                sf_prediction = core.exp_function(np.arange(0., 4.1, 0.1), *popt)
                 if pref_sf==0:
                     high_cut_ind = np.abs(sf_prediction-(sf_prediction.max()/2.))[sf_prediction.argmax():].argmin()+sf_prediction.argmax()
                     high_cutoff = np.arange(0, 4.1, 0.1)[high_cut_ind]
@@ -252,8 +256,12 @@ peak dataframe
         store['peak'] = self.peak
         store.close()
         f = h5py.File(save_file, 'r+')
-        dset = f.create_dataset('response_events', data=self.response_events)
-        dset1 = f.create_dataset('response_trials', data=self.response_trials)
+        data = f['response_events']       # load the data
+        data[...] = self.response_events
+        data1 = f['response_trials']
+        data1[...] = self.response_trials
+#        dset = f.create_dataset('response_events', data=self.response_events)
+#        dset1 = f.create_dataset('response_trials', data=self.response_trials)
         f.close()
         
 if __name__=='__main__':
