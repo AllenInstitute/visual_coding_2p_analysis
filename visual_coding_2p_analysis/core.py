@@ -14,7 +14,7 @@ import numpy as np
 
 
 event_path_dict = {}
-event_path_dict['saskiad'] = r'/Volumes/External Data/L0_Files'
+event_path_dict['saskiad'] = r'/Volumes/aibs/mat/gkocker/l0events_threshold2'
 save_path_dict = {}
 save_path_dict['saskiad'] = r'/Volumes/programs/braintv/workgroups/nc-ophys/Saskia/Visual Coding Event Analysis'
 manifest_path_dict = {}
@@ -73,7 +73,8 @@ l0 event traces (numpy array)
         '''
     user_name = get_username()
     event_path = event_path_dict[user_name]
-    file_path = os.path.join(event_path, str(session_id)+'_L0_events.npy')
+#    file_path = os.path.join(event_path, str(session_id)+'_L0_events.npy')
+    file_path = os.path.join(event_path, 'expt_'+str(session_id)+'_events.npy')
     print "Loading L0 events from: ", file_path
     l0_events = np.load(file_path)
     return l0_events

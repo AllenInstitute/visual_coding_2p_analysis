@@ -11,6 +11,7 @@ import os, h5py
 import scipy.stats as st
 from scipy.optimize import curve_fit
 import core
+import sweep_events_shuffle
 
 def do_sweep_mean(x):
     return x[30:].mean()
@@ -34,7 +35,7 @@ class DriftingGratings(event_analysis):
         super(DriftingGratings, self).__init__(*args, **kwargs)                   
         self.orivals = range(0,360,45)
         self.tfvals = [0,1,2,4,8,15]
-        self.sweep_events, self.mean_sweep_events, self.response_events, self.response_trials = self.get_stimulus_response()
+        self.sweep_events, self.mean_sweep_events,self.sweep_p_values, self.response_events, self.response_trials = self.get_stimulus_response()
         self.peak = self.get_peak()
         self.save_data()
     
@@ -56,29 +57,49 @@ response trials:
             for nc in range(self.numbercells):
                 sweep_events[str(nc)][ind] = self.l0_events[nc, int(row_stim.start)-30:int(row_stim.start)+60]
         mean_sweep_events = sweep_events.applymap(do_sweep_mean)
+        
+        #make trial p_values
+        sweep_p_values = pd.DataFrame(index=self.stim_table.index.values, columns=np.array(range(self.numbercells)).astype(str))
+        for nc in range(self.numbercells):
+            test = np.empty((len(self.stim_table), 90))
+            for i in range(len(self.stim_table)):
+                test[i,:] = sweep_events[str(nc)][i]
+            sweep_p_values[str(nc)] = sweep_events_shuffle.trial_response_significance(test)
     
         #make response array with events
         response_events = np.empty((8,6,self.numbercells,3))
-        response_trials = np.empty((8,6,self.numbercells,15))
+        response_events[:] = np.NaN
+        
+        blank = mean_sweep_events[np.isnan(self.stim_table.orientation)]
+#        threshold = (blank.mean()+blank.std()).values
+        response_trials = np.empty((8,6,self.numbercells,len(blank)))
         response_trials[:] = np.NaN
-        subset = mean_sweep_events[np.isnan(self.stim_table.orientation)]
-        response_events[0,0,:,0] = subset.mean(axis=0)
-        response_events[0,0,:,1] = subset.std(axis=0)/np.sqrt(len(subset))
-        response_events[0,0,:,2] = subset[subset>0].count().values
+        
+#        temp = np.empty((1000, 254))
+#        for i in range(1000):
+#            shuf = np.random.choice(628, size=15, replace=False)
+#            temp[i,:] = mean_sweep_events.loc[shuf].mean()
+#        threshold = temp.mean(axis=0) + (2*temp.std(axis=0))
+        
+        response_events[0,0,:,0] = blank.mean(axis=0)
+        response_events[0,0,:,1] = blank.std(axis=0)/np.sqrt(len(blank))
+        blank_p = sweep_p_values[np.isnan(self.stim_table.orientation)]
+        response_events[0,0,:,2] = blank_p[blank_p<0.05].count().values
+#        response_events[0,0,:,2] = blank[blank>threshold].count().values
+        response_trials[0,0,:,:] = blank.values.T
 
         for oi, ori in enumerate(self.orivals):
             for ti, tf in enumerate(self.tfvals[1:]):
                 subset = mean_sweep_events[(self.stim_table.orientation==ori)&(self.stim_table.temporal_frequency==tf)]
+                subset_p = sweep_p_values[(self.stim_table.orientation==ori)&(self.stim_table.temporal_frequency==tf)]
                 response_events[oi,ti+1,:,0] = subset.mean(axis=0)
                 response_events[oi,ti+1,:,1] = subset.std(axis=0)/np.sqrt(len(subset))
-                response_events[oi,ti+1,:,2] = subset[subset>0].count().values
+#                response_events[oi,ti+1,:,2] = subset[subset>0].count().values
+#                response_events[oi,ti+1,:,2] = subset[subset>threshold].count().values
+                response_events[oi,ti+1,:,2] = subset_p[subset_p<0.05].count().values
                 response_trials[oi,ti+1,:,:subset.shape[0]] = subset.values.T
-        subset = mean_sweep_events[np.isnan(self.stim_table.orientation)]
-        response_events[0,0,:,0] = subset.mean(axis=0)
-        response_events[0,0,:,1] = subset.std(axis=0)/np.sqrt(len(subset))
-        response_events[0,0,:,2] = subset[subset>0].count().values
-        #what to do about blank sweeps for the response_trials?
-        return sweep_events, mean_sweep_events, response_events, response_trials
+
+        return sweep_events, mean_sweep_events, sweep_p_values, response_events, response_trials
     
     def get_lifetime_sparseness(self):
         '''computes lifetime sparseness of responses for all cells
@@ -258,16 +279,16 @@ peak dataframe
         store['peak'] = self.peak
         store.close()
         f = h5py.File(save_file, 'r+')
-        data = f['response_events']       # load the data
-        data[...] = self.response_events
-        data1 = f['response_trials']
-        data1[...] = self.response_trials
-#        dset = f.create_dataset('response_events', data=self.response_events)
-#        dset1 = f.create_dataset('response_trials', data=self.response_trials)
+#        data = f['response_events']       
+#        data[...] = self.response_events
+#        data1 = f['response_trials']
+#        data1[...] = self.response_trials
+        dset = f.create_dataset('response_events', data=self.response_events)
+        dset1 = f.create_dataset('response_trials', data=self.response_trials)
         f.close()
 
 
 if __name__=='__main__':
-    session_id = 511595995
+    session_id = 527745328#511595995
     dg = DriftingGratings(session_id=session_id)
     
