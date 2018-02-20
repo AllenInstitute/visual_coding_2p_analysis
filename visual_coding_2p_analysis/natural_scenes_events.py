@@ -10,21 +10,11 @@ import pandas as pd
 import os, h5py
 import scipy.stats as st
 import core
-
+import sweep_events_shuffle
 
 def do_sweep_mean(x):
     return x[28:35].mean()
     
-def do_count(x):
-    return x[28:35].max()>0.12
-
-def do_magnitude_count(x):
-    if x[28:35].max()>0.12:
-        mag = x[28:35].max()
-    else:
-        mag = 0
-    return mag
-
 class event_analysis(object):
     def __init__(self, *args, **kwargs):
         for k,v in kwargs.iteritems():
@@ -38,7 +28,7 @@ class event_analysis(object):
 class NaturalScenes(event_analysis):    
     def __init__(self, *args, **kwargs):
         super(NaturalScenes, self).__init__(*args, **kwargs)   
-        self.sweep_events, self.mean_sweep_events, self.response_events, self.response_trials = self.get_stimulus_response()
+        self.sweep_events, self.mean_sweep_events, self.sweep_p_values, self.response_events, self.response_trials = self.get_stimulus_response()
         self.peak = self.get_peak()
         self.save_data()
         
@@ -60,8 +50,16 @@ response trials:
         for index,row in self.stim_table.iterrows():
             for nc in range(self.numbercells):
                 sweep_events[str(nc)][index] = self.l0_events[nc, int(row.start)-28:int(row.start)+35]
-        sweep_counts = sweep_events.applymap(do_count)
-        mean_sweep_events = sweep_events.applymap(do_magnitude_count)
+        mean_sweep_events = sweep_events.applymap(do_sweep_mean)
+        
+        #make trial p_values
+        sweep_p_values = pd.DataFrame(index=self.stim_table.index.values, columns=np.array(range(self.numbercells)).astype(str))
+        for nc in range(self.numbercells):
+            test = np.empty((len(self.stim_table), 14))
+            for i in range(len(self.stim_table)):
+                test[i,:] = sweep_events[str(nc)][i][28:42]
+            sweep_p_values[str(nc)] = sweep_events_shuffle.trial_response_significance(test)
+
         
         response_events = np.empty((119,self.numbercells,3))
         response_trials = np.empty((6,6,4,self.numbercells,50))
@@ -69,11 +67,13 @@ response trials:
                 
         for im in range(-1,118):
             subset = mean_sweep_events[self.stim_table.frame==im]
+            subset_p = sweep_p_values[self.stim_table.frame==im]
             response_events[im+1,:,0] = subset.mean(axis=0)
             response_events[im+1,:,1] = subset.std(axis=0)/np.sqrt(len(subset))
-            response_events[im+1,:,2] = subset[subset>0].count().values
+#            response_events[im+1,:,2] = subset[subset>0].count().values
+            response_events[im+1,:,2] = subset_p[subset_p<0.05].count().values
             response_trials[im+1:subset.shape[0]] = subset.values.T        
-        return sweep_events, mean_sweep_events, response_events, response_trials
+        return sweep_events, mean_sweep_events,sweep_p_values, response_events, response_trials
 
     def get_image_selectivity(self, nc):
         '''calculates the image selectivity for cell
@@ -157,15 +157,16 @@ peak dataframe
         store = pd.HDFStore(save_file)
         store['sweep_events'] = self.sweep_events
         store['mean_sweep_events'] = self.mean_sweep_events
+        store['sweep_p_values'] = self.sweep_p_values
         store['peak'] = self.peak
         store.close()
         f = h5py.File(save_file, 'r+')
-        data = f['response_events']       # load the data
-        data[...] = self.response_events
-        data1 = f['response_trials']
-        data1[...] = self.response_trials
-#        dset = f.create_dataset('response_events', data=self.response_events)
-#        dset1 = f.create_dataset('response_trials', data=self.response_trials)
+#        data = f['response_events']       # load the data
+#        data[...] = self.response_events
+#        data1 = f['response_trials']
+#        data1[...] = self.response_trials
+        dset = f.create_dataset('response_events', data=self.response_events)
+        dset1 = f.create_dataset('response_trials', data=self.response_trials)
         f.close()
 
 if __name__=='__main__':
