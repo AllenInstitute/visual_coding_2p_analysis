@@ -11,20 +11,10 @@ import os, h5py
 import scipy.stats as st
 from scipy.optimize import curve_fit
 import core
+import sweep_events_shuffle
 
 def do_sweep_mean(x):
     return x[28:35].mean()
-    
-def do_count(x):
-    return x[28:35].max()>0.12
-
-def do_magnitude_count(x):
-    if x[28:35].max()>0.12:
-        mag = x[28:35].max()
-    else:
-        mag = 0
-    return mag
-
 
 class event_analysis(object):
     def __init__(self, *args, **kwargs):
@@ -42,7 +32,7 @@ class StaticGratings(event_analysis):
         self.orivals = range(0,180,30)
         self.sfvals = [0,0.02,0.04,0.08,0.16,0.32]
         self.phasevals = [0,0.25,0.5,0.75]
-        self.sweep_events, self.mean_sweep_events, self.response_events, self.response_trials = self.get_stimulus_response()
+        self.sweep_events, self.mean_sweep_events, self.sweep_p_values, self.response_events, self.response_trials = self.get_stimulus_response()
         self.peak = self.get_peak()
         self.save_data()
     
@@ -61,8 +51,15 @@ response trials:
         for index,row in self.stim_table.iterrows():
             for nc in range(self.numbercells):
                 sweep_events[str(nc)][index] = self.l0_events[nc, int(row.start)-28:int(row.start)+35]
-        sweep_counts = sweep_events.applymap(do_count)
-        mean_sweep_events = sweep_events.applymap(do_magnitude_count) #sweep_counts_mag 
+        mean_sweep_events = sweep_events.applymap(do_sweep_mean) 
+        
+        #make trial p_values
+        sweep_p_values = pd.DataFrame(index=self.stim_table.index.values, columns=np.array(range(self.numbercells)).astype(str))
+        for nc in range(self.numbercells):
+            test = np.empty((len(self.stim_table), 14))
+            for i in range(len(self.stim_table)):
+                test[i,:] = sweep_events[str(nc)][i][28:42]
+            sweep_p_values[str(nc)] = sweep_events_shuffle.trial_response_significance(test)
         
         response_events = np.empty((6,6,4,self.numbercells,3))
         response_trials = np.empty((6,6,4,self.numbercells,50))
@@ -71,15 +68,18 @@ response trials:
             for si, sf in enumerate(self.sfvals[1:]):
                 for phi, phase in enumerate(self.phasevals):
                     subset = mean_sweep_events[(self.stim_table.orientation==ori)&(self.stim_table.spatial_frequency==sf)&(self.stim_table.phase==phase)]
+                    subset_p = sweep_p_values[(self.stim_table.orientation==ori)&(self.stim_table.spatial_frequency==sf)&(self.stim_table.phase==phase)]
                     response_events[oi,si+1,phi,:,0] = subset.mean(axis=0)
                     response_events[oi,si+1,phi,:,1] = subset.std(axis=0)/np.sqrt(len(subset))
-                    response_events[oi,si+1,phi,:,2] = subset[subset>0].count().values
+#                    response_events[oi,si+1,phi,:,2] = subset[subset>0].count().values
+                    response_events[oi,si+1,phi,:,2] = subset_p[subset_p<0.05].count().values
                     response_trials[oi,si+1,phi,:,:subset.shape[0]] = subset.values.T        
-        subset= mean_sweep_events[np.isnan(self.stim_table.orientation)]
+        subset = mean_sweep_events[np.isnan(self.stim_table.orientation)]
+        subset_p = sweep_p_values[np.isnan(self.stim_table.orientation)]
         response_events[0,0,0,:,0] = subset.mean(axis=0)
         response_events[0,0,0,:,1] = subset.std(axis=0)/np.sqrt(len(subset))
-        response_events[0,0,0,:,2] = subset[subset>0].count().values
-        return sweep_events, mean_sweep_events, response_events, response_trials
+        response_events[0,0,0,:,2] = subset_p[subset_p<0.05].count().values
+        return sweep_events, mean_sweep_events, sweep_p_values, response_events, response_trials
 
     def get_lifetime_sparseness(self):
         '''computes lifetime sparseness of responses for all cells
@@ -256,12 +256,12 @@ peak dataframe
         store['peak'] = self.peak
         store.close()
         f = h5py.File(save_file, 'r+')
-        data = f['response_events']       # load the data
-        data[...] = self.response_events
-        data1 = f['response_trials']
-        data1[...] = self.response_trials
-#        dset = f.create_dataset('response_events', data=self.response_events)
-#        dset1 = f.create_dataset('response_trials', data=self.response_trials)
+#        data = f['response_events']       # load the data
+#        data[...] = self.response_events
+#        data1 = f['response_trials']
+#        data1[...] = self.response_trials
+        dset = f.create_dataset('response_events', data=self.response_events)
+        dset1 = f.create_dataset('response_trials', data=self.response_trials)
         f.close()
         
 if __name__=='__main__':
