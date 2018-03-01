@@ -30,7 +30,7 @@ class NaturalScenes(event_analysis):
         super(NaturalScenes, self).__init__(*args, **kwargs)   
         self.sweep_events, self.mean_sweep_events, self.sweep_p_values, self.response_events, self.response_trials = self.get_stimulus_response()
         self.peak = self.get_peak()
-        self.save_data()
+#        self.save_data()
         
     def get_stimulus_response(self):
         '''calculates the response to each stimulus trial. Calculates the mean response to each stimulus condition.
@@ -51,19 +51,22 @@ response trials:
             for nc in range(self.numbercells):
                 sweep_events[str(nc)][index] = self.l0_events[nc, int(row.start)-28:int(row.start)+35]
         mean_sweep_events = sweep_events.applymap(do_sweep_mean)
+#        mean_sweep_events = sweep_events.applymap(do_sweep_mean_shift)
         
         #make trial p_values
         sweep_p_values = pd.DataFrame(index=self.stim_table.index.values, columns=np.array(range(self.numbercells)).astype(str))
         for nc in range(self.numbercells):
-            test = np.empty((len(self.stim_table), 14))
+            test = np.empty((len(self.stim_table), 7))
             for i in range(len(self.stim_table)):
-                test[i,:] = sweep_events[str(nc)][i][28:42]
+                test[i,:] = sweep_events[str(nc)][i][28:35]
             sweep_p_values[str(nc)] = sweep_events_shuffle.trial_response_significance(test)
-
         
         response_events = np.empty((119,self.numbercells,3))
         response_trials = np.empty((6,6,4,self.numbercells,50))
         response_trials[:] = np.NaN
+
+        blank = mean_sweep_events[self.stim_table.frame==-1]
+        threshold = blank.mean(axis=0) + (2*blank.std(axis=0))
                 
         for im in range(-1,118):
             subset = mean_sweep_events[self.stim_table.frame==im]
@@ -72,6 +75,7 @@ response trials:
             response_events[im+1,:,1] = subset.std(axis=0)/np.sqrt(len(subset))
 #            response_events[im+1,:,2] = subset[subset>0].count().values
             response_events[im+1,:,2] = subset_p[subset_p<0.05].count().values
+#            response_events[im+1,:,2] = subset[subset>threshold].count().values
             response_trials[im+1:subset.shape[0]] = subset.values.T        
         return sweep_events, mean_sweep_events,sweep_p_values, response_events, response_trials
 
@@ -161,10 +165,6 @@ peak dataframe
         store['peak'] = self.peak
         store.close()
         f = h5py.File(save_file, 'r+')
-#        data = f['response_events']       # load the data
-#        data[...] = self.response_events
-#        data1 = f['response_trials']
-#        data1[...] = self.response_trials
         dset = f.create_dataset('response_events', data=self.response_events)
         dset1 = f.create_dataset('response_trials', data=self.response_trials)
         f.close()
