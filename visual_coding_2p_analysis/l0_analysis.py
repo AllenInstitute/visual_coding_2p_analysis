@@ -49,7 +49,7 @@ class L0_analysis:
     """
     def __init__(self, dataset, 
                        manifest_file='/allen/aibs/technology/allensdk_data/platform_boc_pre_2018_3_16/manifest_file.json', 
-                       event_min_size=1., noise_scale=.1, median_filter_1=2001, median_filter_2=101, halflife_ms=None, 
+                       event_min_size=2., noise_scale=.1, median_filter_1=2001, median_filter_2=101, halflife_ms=None, 
                        sample_rate_hz=30, genotype='Unknown', L0_constrain=False, 
                        cache_directory='/allen/aibs/technology/allensdk_data/platform_events_pre_2018_3_19/'):
         
