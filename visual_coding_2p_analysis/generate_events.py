@@ -27,10 +27,25 @@ def generate_events(n):
     print "Done"
 
 
+def generate_events_for_expt(eid):
+
+    boc = BrainObservatoryCache(manifest_file=MANIFEST_FILE)
+
+    print "Processing events for ", eid
+    data = boc.get_ophys_experiment_data(eid)
+    l0 = L0_analysis(data)
+
+    events = l0.get_events()
+
+    
+
+
 if __name__ == '__main__':
 
     import sys
 
     n = int(sys.argv[1])
 
-    generate_events(n)
+    # generate_events(n)
+
+    generate_events_for_expt(n)

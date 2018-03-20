@@ -1,6 +1,6 @@
 from __future__ import print_function
 import numpy as np
-from FastLZeroSpikeInference import fast
+# from FastLZeroSpikeInference import fast
 # from scipy.signal import medfilt
 from scipy.ndimage.filters import median_filter 
 import sys
@@ -9,7 +9,7 @@ import cPickle as pickle
 import warnings
 import os
 
-l0 = fast.arfpop
+# l0 = fast.arfpop
 medfilt = lambda x, s: median_filter(x, s, mode='constant')
 
 class L0_analysis:
@@ -49,7 +49,7 @@ class L0_analysis:
     """
     def __init__(self, dataset, 
                        manifest_file='/allen/aibs/technology/allensdk_data/platform_boc_pre_2018_3_16/manifest_file.json', 
-                       event_min_size=1., noise_scale=.1, median_filter_1=2001, median_filter_2=101, halflife_ms=None, 
+                       event_min_size=2., noise_scale=.1, median_filter_1=2001, median_filter_2=101, halflife_ms=None, 
                        sample_rate_hz=30, genotype='Unknown', L0_constrain=False, 
                        cache_directory='/allen/aibs/technology/allensdk_data/platform_events_pre_2018_3_19/'):
         
@@ -90,6 +90,15 @@ class L0_analysis:
         self._gamma = None
 
         self.lambdas = []
+        self.l0_func = None
+
+    @property
+    def l0(self):
+        if self.l0_func is None:
+            from FastLZeroSpikeInference import fast
+            self.l0_func = fast.arfpop
+
+        return self.l0_func
 
     @property
     def evfile(self):
@@ -223,7 +232,7 @@ class L0_analysis:
             l = step
             s1 += step
         print(l)
-        tmp = l0(dff, self.gamma, l, self.L0_constrain)['pos_spike_mag']
+        tmp = self.l0(dff, self.gamma, l, self.L0_constrain)['pos_spike_mag']
 
         if len(tmp[tmp > 0]) == 0 and bisect is True:
             return self.bracket(dff, n, s1 - 5*step, step, step_min, event_min_size) 
@@ -236,7 +245,7 @@ class L0_analysis:
                     lasttmp = tmp[:]
                     l += step
                     print(l)
-                    tmp = l0(dff, self.gamma, l, self.L0_constrain)['pos_spike_mag']
+                    tmp = self.l0(dff, self.gamma, l, self.L0_constrain)['pos_spike_mag']
                 if len(tmp[tmp > 0]) == 0:
                     return (lasttmp, l-step)
                 else:
