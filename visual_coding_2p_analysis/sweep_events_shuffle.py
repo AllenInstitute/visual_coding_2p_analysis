@@ -32,8 +32,3 @@ def trial_response_significance(sweep_events,num_shuffles=10000):
     p_values = np.mean(actual_is_less,axis=1)
     
     return p_values
-
-
-#def trial_significance(sweep_events, num_shuffles=10000):
-#    num_sweeps = np.shape(sweep_events)[0]
-#    num_shuffles = int(num_shuffles / num_sweeps) #each sweep contributes one shuffle to the null distribution

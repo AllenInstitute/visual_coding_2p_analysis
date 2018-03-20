@@ -9,21 +9,29 @@ Core functions used across stimulus specific analysis scripts
 """
 
 import os
-import pwd
 import numpy as np
+import sys
 
 
 event_path_dict = {}
 event_path_dict['saskiad'] = r'/Volumes/aibs/mat/gkocker/l0events_threshold2'
+event_path_dict['saskiad_windows'] = r'\\allen\aibs\mat\gkocker\l0events_threshold2'
 save_path_dict = {}
 save_path_dict['saskiad'] = r'/Volumes/programs/braintv/workgroups/nc-ophys/Saskia/Visual Coding Event Analysis'
+save_path_dict['saskiad_windows'] = r'\\allen\programs\braintv\workgroups\nc-ophys\Saskia\Visual Coding Event Analysis'
 manifest_path_dict = {}
 #manifest_path_dict['saskiad'] = r'/Volumes/aibs/technology/allensdk_data/2018-01-30T10_59_26.662324/boc/manifest.json'
 manifest_path_dict['saskiad'] = r'/Volumes/External Data/BrainObservatory/manifest.json'
+manifest_path_dict['saskiad_windows'] = r"\\allen\aibs\technology\allensdk_data\platform_boc_pre_2018_3_16\manifest.json"
 
 def get_username():
-    return pwd.getpwuid( os.getuid() )[ 0 ]
-
+    if sys.platform=='win32':
+        username = 'saskiad_windows'
+    else:
+        import pwd
+        username = pwd.getpwuid( os.getuid() )[ 0 ]
+    return username
+    
 def get_save_path():
     '''provides the appropriate paths for a given user
         
@@ -89,9 +97,30 @@ manifest path
     user_name= get_username()
     return manifest_path_dict[user_name]
 
+def get_running_speed(session_id):
+    '''uses allenSDK to get the running speed for a specified session
+
+Parameters
+----------
+session_id
+        
+Returns
+-------
+running speed
+        '''
+    manifest_path = get_manifest_path()
+    from allensdk.core.brain_observatory_cache import BrainObservatoryCache
+    boc = BrainObservatoryCache(manifest_file=manifest_path)
+    data_set = boc.get_ophys_experiment_data(session_id)
+    running_speed,_ = data_set.get_running_speed()
+    return running_speed
+
+
 def gauss_function(x, a, x0, sigma):
     return a*np.exp(-(x-x0)**2/(2*sigma**2))
 
 def exp_function(x, a, b, c):
     return a*np.exp(-b*x)+c
+
+
 

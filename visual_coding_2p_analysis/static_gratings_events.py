@@ -16,16 +16,20 @@ import sweep_events_shuffle
 def do_sweep_mean(x):
     return x[28:35].mean()
 
+def do_sweep_mean_shifted(x):
+    return x[30:40].mean()
+
 class event_analysis(object):
     def __init__(self, *args, **kwargs):
         for k,v in kwargs.iteritems():
             setattr(self, k, v)
         self.session_id = session_id
         save_path_head = core.get_save_path()
-        self.save_path = os.path.join(save_path_head, 'Static Gratings')
+        self.save_path = os.path.join(save_path_head, 'SG')
         self.l0_events = core.get_L0_events(self.session_id)
         self.stim_table, self.numbercells, self.specimen_ids = core.get_stim_table(self.session_id, 'static_gratings')
-           
+        self.stim_table_sp,_,_ = core.get_stim_table(self.session_id, 'spontaneous')
+        
 class StaticGratings(event_analysis):    
     def __init__(self, *args, **kwargs):
         super(StaticGratings, self).__init__(*args, **kwargs)                   
@@ -51,15 +55,30 @@ response trials:
         for index,row in self.stim_table.iterrows():
             for nc in range(self.numbercells):
                 sweep_events[str(nc)][index] = self.l0_events[nc, int(row.start)-28:int(row.start)+35]
-        mean_sweep_events = sweep_events.applymap(do_sweep_mean) 
+#        mean_sweep_events = sweep_events.applymap(do_sweep_mean) 
+        mean_sweep_events = sweep_events.applymap(do_sweep_mean_shifted) 
+        
+        #make spontaneous p_values
+        shuffled_responses = np.empty((self.numbercells, 10000,10))
+        idx = np.random.choice(range(self.stim_table_sp.start, self.stim_table_sp.end), 10000)
+        for i in range(10):
+            shuffled_responses[:,:,i] = self.l0_events[:,idx+i]
+        shuffled_mean = shuffled_responses.mean(axis=2)
+        sweep_p_values = pd.DataFrame(index = self.stim_table.index.values, columns=np.array(range(self.numbercells)).astype(str))
+        for nc in range(self.numbercells):
+            subset = mean_sweep_events[str(nc)].values
+            null_dist_mat = np.tile(shuffled_mean[nc,:], reps=(len(subset),1))
+            actual_is_less = subset.reshape(len(subset),1) <= null_dist_mat
+            p_values = np.mean(actual_is_less, axis=1)
+            sweep_p_values[str(nc)] = p_values
         
         #make trial p_values
-        sweep_p_values = pd.DataFrame(index=self.stim_table.index.values, columns=np.array(range(self.numbercells)).astype(str))
-        for nc in range(self.numbercells):
-            test = np.empty((len(self.stim_table), 14))
-            for i in range(len(self.stim_table)):
-                test[i,:] = sweep_events[str(nc)][i][28:42]
-            sweep_p_values[str(nc)] = sweep_events_shuffle.trial_response_significance(test)
+#        sweep_p_values = pd.DataFrame(index=self.stim_table.index.values, columns=np.array(range(self.numbercells)).astype(str))
+#        for nc in range(self.numbercells):
+#            test = np.empty((len(self.stim_table), 7))
+#            for i in range(len(self.stim_table)):
+#                test[i,:] = sweep_events[str(nc)][i][28:35]
+#            sweep_p_values[str(nc)] = sweep_events_shuffle.trial_response_significance(test)
         
         response_events = np.empty((6,6,4,self.numbercells,3))
         response_trials = np.empty((6,6,4,self.numbercells,50))
@@ -256,14 +275,23 @@ peak dataframe
         store['peak'] = self.peak
         store.close()
         f = h5py.File(save_file, 'r+')
-#        data = f['response_events']       # load the data
-#        data[...] = self.response_events
-#        data1 = f['response_trials']
-#        data1[...] = self.response_trials
         dset = f.create_dataset('response_events', data=self.response_events)
         dset1 = f.create_dataset('response_trials', data=self.response_trials)
         f.close()
         
 if __name__=='__main__':
-    session_id = 511458874
-    sg = StaticGratings(session_id=session_id)
+#    session_id = 511458874
+#    sg = StaticGratings(session_id=session_id)
+
+    from allensdk.core.brain_observatory_cache import BrainObservatoryCache
+    fail=[]
+    manifest_path = core.get_manifest_path()
+    boc = BrainObservatoryCache(manifest_file = manifest_path)
+    exp = pd.DataFrame(boc.get_ophys_experiments())
+    exp_dg = exp[exp.session_type=='three_session_B'].id.values
+    for a in exp_dg:
+        try:
+            session_id = a
+            sg = StaticGratings(session_id=session_id)
+        except:
+            fail.append(a)

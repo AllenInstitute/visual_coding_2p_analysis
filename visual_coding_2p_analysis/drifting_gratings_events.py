@@ -28,7 +28,7 @@ class event_analysis(object):
         self.save_path = os.path.join(save_path_head, 'Drifting Gratings')
         self.l0_events = core.get_L0_events(self.session_id)
         self.stim_table, self.numbercells, self.specimen_ids = core.get_stim_table(self.session_id, 'drifting_gratings')
-
+        self.dxcm = core.get_running_speed(self.session_id)
         
 class DriftingGratings(event_analysis):    
     def __init__(self, *args, **kwargs):
@@ -52,19 +52,35 @@ response trials:
         '''
         print "Computing responses"
         #make sweep_response with events
-        sweep_events = pd.DataFrame(index=self.stim_table.index.values, columns=np.array(range(self.numbercells)).astype(str))
+        sweep_events = pd.DataFrame(index=self.stim_table.index.values, columns=np.array(range(self.numbercells+1)).astype(str))
+        sweep_events.rename(columns={str(self.numbercells) : 'running_speed'}, inplace=True)
         for ind,row_stim in self.stim_table.iterrows():
             for nc in range(self.numbercells):
                 sweep_events[str(nc)][ind] = self.l0_events[nc, int(row_stim.start)-30:int(row_stim.start)+60]
+            sweep_events.running_speed = self.dxcm[int(row_stim.start)-30:int(row_stim.start)+60]
         mean_sweep_events = sweep_events.applymap(do_sweep_mean)
         
-        #make trial p_values
-        sweep_p_values = pd.DataFrame(index=self.stim_table.index.values, columns=np.array(range(self.numbercells)).astype(str))
+        #make spontaneous p_values
+        shuffled_responses = np.empty((self.numbercells, 10000, 60))
+        idx = np.random.choice(range(self.stim_table_sp.start, self.stim_table_sp.end), 10000)
+        for i in range(60):
+            shuffled_responses[:,:,i] = self.l0_events[:,idx+i]
+        shuffled_mean = shuffled_responses.mean(axis=2)
+        sweep_p_values = pd.DataFrame(index = self.stim_table.index.values, columns=np.array(range(self.numbercells)).astype(str))
         for nc in range(self.numbercells):
-            test = np.empty((len(self.stim_table), 90))
-            for i in range(len(self.stim_table)):
-                test[i,:] = sweep_events[str(nc)][i]
-            sweep_p_values[str(nc)] = sweep_events_shuffle.trial_response_significance(test)
+            subset = mean_sweep_events[str(nc)].values
+            null_dist_mat = np.tile(shuffled_mean[nc,:], reps=(len(subset),1))
+            actual_is_less = subset.reshape(len(subset),1) <= null_dist_mat
+            p_values = np.mean(actual_is_less, axis=1)
+            sweep_p_values[str(nc)] = p_values
+        
+        #make trial p_values
+#        sweep_p_values = pd.DataFrame(index=self.stim_table.index.values, columns=np.array(range(self.numbercells)).astype(str))
+#        for nc in range(self.numbercells):
+#            test = np.empty((len(self.stim_table), 90))
+#            for i in range(len(self.stim_table)):
+#                test[i,:] = sweep_events[str(nc)][i]
+#            sweep_p_values[str(nc)] = sweep_events_shuffle.trial_response_significance(test)
     
         #make response array with events
         response_events = np.empty((8,6,self.numbercells,3))
@@ -75,10 +91,6 @@ response trials:
         response_trials = np.empty((8,6,self.numbercells,len(blank)))
         response_trials[:] = np.NaN
         
-#        temp = np.empty((1000, 254))
-#        for i in range(1000):
-#            shuf = np.random.choice(628, size=15, replace=False)
-#            temp[i,:] = mean_sweep_events.loc[shuf].mean()
 #        threshold = temp.mean(axis=0) + (2*temp.std(axis=0))
         
         response_events[0,0,:,0] = blank.mean(axis=0)
@@ -234,8 +246,61 @@ high cutoff tf from the curve fit
                 pass
         return fit_tf_ind, fit_tf, tf_low_cutoff, tf_high_cutoff
 
+    def get_running_modulation(self, pref_ori, pref_tf, nc):
+        '''computes running modulation of cell at its preferred condition provided there are at 
+        least 2 trials for both stationary and running conditions
 
+Parameters
+----------
+preferred orientation
+preferred temporal frequency
+cell index
 
+Returns
+-------
+p_value of running modulation
+running modulation metric
+mean response to preferred condition when running
+mean response to preferred condition when stationary
+        '''
+        subset = self.mean_sweep_events[(self.stim_table.temporal_frequency==self.tfvals[pref_tf+1])
+                                         &(self.stim_table.orientation==self.orivals[pref_ori])]   
+        subset_run = subset[subset.running_speed>=1]
+        subset_stat = subset[subset.running_speed<1]
+        if np.logical_and(len(subset_run)>1, len(subset_stat)>1):
+            run = subset[subset.running_speed>=1][str(nc)].mean()
+            stat = subset[subset.running_speed<1][str(nc)].mean()
+            if run > stat:
+                run_mod = (run - stat)/run
+            elif stat > run:
+                run_mod = -1 * (stat - run)/stat
+            (_,p) = st.ttest_ind(subset_run[str(nc)], subset_stat[str(nc)], equal_var=False)
+            return p, run_mod, run, stat
+        else:
+            return np.NaN, np.NaN, np.NaN, np.NaN
+
+    def get_suppressed_contrast(self, pref_ori, pref_tf, nc):
+        '''computes two metrics to be used to identify cells that are suppressed by contrast
+
+Parameters
+----------
+preferred orientation
+preferred temporal frequency
+cell index
+
+Returns
+-------
+peak - blank
+peak - all
+        '''
+        blank = self.response_events[0,0,nc,0]
+        peak = self.response_events[pref_ori, pref_tf+1, nc, 0]
+        all_resp = self.response_events[:,1:,nc,0].mean()
+        peak_blank = peak - blank
+        peak_all = peak - all_resp
+        return peak_blank, peak_all
+        
+    
     def get_peak(self):
         '''creates a table of metrics for each cell
 
@@ -246,7 +311,8 @@ peak dataframe
         print "Computing metrics"
         peak = pd.DataFrame(columns=('cell_specimen_id','pref_ori_dg','pref_tf_dg','num_pref_trials_dg','responsive_dg',
                                      'g_osi_dg','g_dsi_dg','tfdi_dg','reliability_dg','lifetime_sparseness_dg', 
-                                     'fit_tf_dg','fit_tf_ind_dg','tf_low_cutoff_dg','tf_high_cutoff_dg'), index=range(self.numbercells))
+                                     'fit_tf_dg','fit_tf_ind_dg','tf_low_cutoff_dg','tf_high_cutoff_dg','run_pval_dg',
+                                     'run_resp_dg','stat_resp_dg','run_mod_dg', 'peak_blank_dg','peak_all_dg'), index=range(self.numbercells))
         
         peak['lifetime_sparseness_dg'] = self.get_lifetime_sparseness()
         for nc in range(self.numbercells):
@@ -265,6 +331,8 @@ peak dataframe
             peak.g_osi_dg.iloc[nc], peak.g_dsi_dg.iloc[nc] = self.get_osi(pref_tf, nc)
             peak.reliability_dg.iloc[nc] = self.get_reliability(pref_ori, pref_tf, nc)
             peak.tfdi_dg.iloc[nc] = self.get_tfdi(pref_ori, nc)
+            peak.run_pval_dg.iloc[nc], peak.run_mod_dg.iloc[nc], peak.run_resp_dg.iloc[nc], peak.stat_resp_dg.iloc[nc] = self.get_running_modulation(pref_ori, pref_tf, nc)
+            peak.peak_blank_dg.iloc[nc], peak.peak_all_dg.iloc[nc] = self.get_suppressed_contrast(pref_ori, pref_tf, nc)
             if self.response_events[pref_ori, pref_tf+1,nc,2]>3:
                 peak.fit_tf_ind_dg.iloc[nc], peak.fit_tf_dg.iloc[nc], peak.tf_low_cutoff_dg.iloc[nc], peak.tf_high_cutoff_dg.iloc[nc] = self.fit_tf_tuning(pref_ori, pref_tf, nc)
             
@@ -276,13 +344,10 @@ peak dataframe
         store = pd.HDFStore(save_file)
         store['sweep_events'] = self.sweep_events
         store['mean_sweep_events'] = self.mean_sweep_events
+        store['sweep_p_values'] = self.sweep_p_values
         store['peak'] = self.peak
         store.close()
         f = h5py.File(save_file, 'r+')
-#        data = f['response_events']       
-#        data[...] = self.response_events
-#        data1 = f['response_trials']
-#        data1[...] = self.response_trials
         dset = f.create_dataset('response_events', data=self.response_events)
         dset1 = f.create_dataset('response_trials', data=self.response_trials)
         f.close()
@@ -292,3 +357,14 @@ if __name__=='__main__':
     session_id = 527745328#511595995
     dg = DriftingGratings(session_id=session_id)
     
+#    from allensdk.core.brain_observatory_cache import BrainObservatoryCache
+#    fail=[]
+#    manifest_path = core.get_manifest_path()
+#    boc = BrainObservatoryCache(manifest_file = manifest_path)
+#    exp = pd.DataFrame(boc.get_ophys_experiments(session_types=['three_session_A'])).id.values
+#    for a in exp:
+#        try:
+#            session_id = a
+#            ns = DriftingGratings(session_id=session_id)
+#        except:
+#            fail.append(a)
