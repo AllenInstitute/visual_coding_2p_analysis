@@ -15,18 +15,18 @@ import sys
 
 event_path_dict = {}
 event_path_dict['saskiad'] = r'/Volumes/aibs/mat/gkocker/l0events_threshold2'
-event_path_dict['saskiad_windows'] = r'\\allen\aibs\mat\gkocker\l0events_threshold2'
+event_path_dict['windows'] = r'\\allen\aibs\mat\gkocker\l0events_threshold2'
 save_path_dict = {}
 save_path_dict['saskiad'] = r'/Volumes/programs/braintv/workgroups/nc-ophys/Saskia/Visual Coding Event Analysis'
-save_path_dict['saskiad_windows'] = r'\\allen\programs\braintv\workgroups\nc-ophys\Saskia\Visual Coding Event Analysis'
+save_path_dict['windows'] = r'\\allen\programs\braintv\workgroups\nc-ophys\Saskia\Visual Coding Event Analysis'
 manifest_path_dict = {}
 #manifest_path_dict['saskiad'] = r'/Volumes/aibs/technology/allensdk_data/2018-01-30T10_59_26.662324/boc/manifest.json'
 manifest_path_dict['saskiad'] = r'/Volumes/External Data/BrainObservatory/manifest.json'
-manifest_path_dict['saskiad_windows'] = r"\\allen\aibs\technology\allensdk_data\platform_boc_pre_2018_3_16\manifest.json"
+manifest_path_dict['windows'] = r"\\allen\aibs\technology\allensdk_data\platform_boc_pre_2018_3_16\manifest.json"
 
 def get_username():
     if sys.platform=='win32':
-        username = 'saskiad_windows'
+        username = 'windows'
     else:
         import pwd
         username = pwd.getpwuid( os.getuid() )[ 0 ]
@@ -72,7 +72,6 @@ def get_L0_events(session_id):
         
 Parameters
 ----------
-path to L0 event files
 session_id (int)
 
 Returns
@@ -122,5 +121,20 @@ def gauss_function(x, a, x0, sigma):
 def exp_function(x, a, b, c):
     return a*np.exp(-b*x)+c
 
+def get_cre_colors():
+    cre_colors = {}
+    cre_colors['Emx1-IRES-Cre'] = '#9f9f9f'
+    cre_colors['Slc17a7-IRES2-Cre'] = '#5c5c5c'
+    cre_colors['Cux2-CreERT2'] = '#a92e66'
+    cre_colors['Rorb-IRES2-Cre'] = '#7841be'
+    cre_colors['Scnn1a-Tg3-Cre'] = '#4f63c2'
+    cre_colors['Nr5a1-Cre'] = '#5bb0b0'
+    cre_colors['Fezf2-CreER'] = '#3A6604'
+    cre_colors['Tlx3-Cre_PL56'] = '#99B20D'
+    cre_colors['Rbp4-Cre_KL100'] = '#5cad53'
+    cre_colors['Ntsr1-Cre_GN220'] = '#875e24'
+    cre_colors['Sst-IRES-Cre'] = '#ff944d'
+    cre_colors['Vip-IRES-Cre'] = '#ffe066'    
+    return cre_colors
 
 
