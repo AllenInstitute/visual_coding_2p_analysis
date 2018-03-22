@@ -79,6 +79,7 @@ l0 event traces (numpy array)
    events = l0.get_events()
    return events
 
+
 def get_manifest_path():
     '''provides the path to the manifest for the boc
 
