@@ -51,7 +51,7 @@ specimen IDs
     numbercells = len(specimen_ids)
     return stim_table, numbercells, specimen_ids
 
-def get_L0_events(session_id, rescale=True):
+def get_L0_events(session_id):
     '''gets the L0 event time series for a given session
 
 Parameters
@@ -70,10 +70,6 @@ l0 event traces (numpy array)
     from l0_analysis import L0_analysis
     l0 = L0_analysis(data_set)
     events = l0.get_events()
-
-    if rescale:
-        noise_stds = l0.noise_stds
-
     return events
 
 def get_manifest_path():
