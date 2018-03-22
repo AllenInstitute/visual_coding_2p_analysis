@@ -49,7 +49,7 @@ class L0_analysis:
     """
     def __init__(self, dataset,
                        manifest_file='/allen/aibs/technology/allensdk_data/platform_boc_pre_2018_3_16/manifest_file.json',
-                       event_min_size=2., noise_scale=.1, median_filter_1=2001, median_filter_2=101, halflife_ms=None,
+                       event_min_size=2., noise_scale=.1, median_filter_1=5401, median_filter_2=101, halflife_ms=None,
                        sample_rate_hz=30, genotype='Unknown', L0_constrain=False,
                        cache_directory='/allen/aibs/technology/allensdk_data/platform_events_pre_2018_3_19/'):
 
@@ -126,31 +126,37 @@ class L0_analysis:
             self._dff_traces = np.load(self.dff_file)['dff']
         elif self._dff_traces is None:
             self.print('Median filter detrending in progress', end='', flush=True)
-            mf = []
             self.noise_stds = []
             dff_traces = np.copy(self.corrected_fluorescence_traces)
+
+            N = dff_traces.shape[0]
+            num_small_baseline_frames = np.zeros((N, ), dtype=int)
+
             for dff in dff_traces:
-                # long time scale median filter for baseline subtraction
+
+                sigma_f = self.noise_std(dff)
+
+                # long timescale median filter for baseline subtraction
                 tf = medfilt(dff, self.median_filter_1)
                 dff -= tf
-                n = self.noise_std(dff)
+                dff /= np.maximum(tf, sigma_f)
 
-                tf2 = medfilt(dff, self.median_filter_2)
-                tf2 = np.minimum(tf2, 2.5*n)
-                dff -= tf2
+                num_small_baseline_frames[n] = np.sum(tf <= sigma_f)
 
-                # normalize so all have noise std of noise_scale
-                n = self.noise_std(dff)
-                self.noise_stds.append(n)
-                dff *= self.noise_scale / n
+                sigma_dff = self.noise_std(dff)
+                self.noise_stds.append(sigma_dff)
+
+                # short timescale detrending
+                tf = medfilt(dff, self.median_filter_2)
+                tf = np.minimum(tf, 2.5*sigma_dff)
+                dff -= tf
 
                 self.print('.', end='', flush=True)
 
             self._dff_traces = dff_traces
-            np.savez(self.dff_file, dff=dff_traces)
+            np.savez(self.dff_file, dff=dff_traces, num_low_baseline=num_small_baseline_frames)
             self.print('done!')
         return self._dff_traces
-
 
     @property
     def gamma(self):
@@ -210,7 +216,9 @@ class L0_analysis:
             self.print('Calculating events in progress', flush=True)
 
             events = []
-            for dff in self.dff_traces:
+            for n, dff in enumerate(self.dff_traces):
+                dff *= self.noise_scale / self.noise_stds[n]
+
                 if any(np.isnan(dff)):
                     tmp = np.NaN*np.zeros(dff.shape)
                     self._lambdas.append(np.NaN)
@@ -219,7 +227,7 @@ class L0_analysis:
 
                     (tmp, l) = self.bracket(tmp, self.noise_scale, 0, self.noise_scale, .0001, self.event_min_size)
 
-                    events.append(tmp)
+                    events.append(tmp * self.noise_stds[n] / self.noise_scale)
                     self.lambdas.append(l)
                 self.print('.', end='', flush=True)
             events = np.array(events)

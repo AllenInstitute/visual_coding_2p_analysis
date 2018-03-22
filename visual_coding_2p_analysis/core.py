@@ -62,12 +62,12 @@ Returns
 -------
 l0 event traces (numpy array)
         '''
-    
-#     event_path = get_event_path()
-#     event_file = os.path.join(event_path, str(session_id)+'.npz')
-#     print "Loading L0 events from: ", event_file
-#     events = np.load(event_file)['ev']
-#     return events
+
+    # event_path = get_event_path()
+    # event_file = os.path.join(event_path, str(session_id)+'.npz')
+    # print "Loading L0 events from: ", event_file
+    # events = np.load(event_file)['ev']
+    # return events
 
    print "Loading L0 events for: ", str(session_id)
    manifest_path = get_manifest_path()
@@ -78,7 +78,7 @@ l0 event traces (numpy array)
    l0 = L0_analysis(data_set)
    events = l0.get_events()
    return events
-    
+
 
 def get_manifest_path():
     '''provides the path to the manifest for the boc
@@ -109,7 +109,7 @@ cache path
 
 def get_event_path():
     '''returns the path for the L0 event files
-        
+
 Returns
 -------
 event path
