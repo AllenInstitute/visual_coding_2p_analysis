@@ -129,8 +129,7 @@ class L0_analysis:
             self.noise_stds = []
             dff_traces = np.copy(self.corrected_fluorescence_traces)
 
-            N = dff_traces.shape[0]
-            num_small_baseline_frames = np.zeros((N, ), dtype=int)
+            num_small_baseline_frames = []
 
             for dff in dff_traces:
 
@@ -141,7 +140,7 @@ class L0_analysis:
                 dff -= tf
                 dff /= np.maximum(tf, sigma_f)
 
-                num_small_baseline_frames[n] = np.sum(tf <= sigma_f)
+                num_small_baseline_frames.append(np.sum(tf <= sigma_f))
 
                 sigma_dff = self.noise_std(dff)
                 self.noise_stds.append(sigma_dff)
@@ -154,7 +153,7 @@ class L0_analysis:
                 self.print('.', end='', flush=True)
 
             self._dff_traces = dff_traces
-            np.savez(self.dff_file, dff=dff_traces, num_low_baseline=num_small_baseline_frames)
+            np.savez(self.dff_file, dff=dff_traces, num_low_baseline=np.array(num_small_baseline_frames))
             self.print('done!')
         return self._dff_traces
 
