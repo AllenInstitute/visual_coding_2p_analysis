@@ -15,7 +15,7 @@ import sys
 
 def get_save_path():
     '''provides the appropriate paths for a given platform
-        
+
 Returns
 -------
 save_path
@@ -28,9 +28,9 @@ save_path
     return save_path
 
 
-def get_stim_table(session_id, stimulus): 
+def get_stim_table(session_id, stimulus):
     '''uses allenSDK to get stimulus table, specimen IDs, and the number of cells in specific session.
-        
+
 Parameters
 ----------
 session_id (int)
@@ -39,7 +39,7 @@ stimulus name (string)
 Returns
 -------
 stim_table (pandas DataFrame)
-numbercells        
+numbercells
 specimen IDs
         '''
     manifest_path = get_manifest_path()
@@ -51,9 +51,9 @@ specimen IDs
     numbercells = len(specimen_ids)
     return stim_table, numbercells, specimen_ids
 
-def get_L0_events(session_id): 
+def get_L0_events(session_id, rescale=True):
     '''gets the L0 event time series for a given session
-        
+
 Parameters
 ----------
 session_id (int)
@@ -70,11 +70,15 @@ l0 event traces (numpy array)
     from l0_analysis import L0_analysis
     l0 = L0_analysis(data_set)
     events = l0.get_events()
+
+    if rescale:
+        noise_stds = l0.noise_stds
+
     return events
-    
+
 def get_manifest_path():
     '''provides the path to the manifest for the boc
-        
+
 Returns
 -------
 manifest path
@@ -83,12 +87,12 @@ manifest path
         manifest_path = r"\\allen\aibs\technology\allensdk_data\platform_boc_pre_2018_3_16\manifest.json"
     elif sys.platform=='darwin':
         manifest_path = r"/Volumes/aibs/technology/allensdk_data/platform_boc_pre_2018_3_16/manifest.json"
-    
+
     return manifest_path
 
 def get_cache_path():
     '''returns the cache for  the L0 event files
-        
+
 Returns
 -------
 cache path
@@ -105,7 +109,7 @@ def get_running_speed(session_id):
 Parameters
 ----------
 session_id
-        
+
 Returns
 -------
 running speed
@@ -126,7 +130,7 @@ def exp_function(x, a, b, c):
 
 def get_cre_colors():
     '''returns dictionary of colors for specific Cre lines
-        
+
 Returns
 -------
 cre color dictionary
@@ -143,7 +147,7 @@ cre color dictionary
     cre_colors['Rbp4-Cre_KL100'] = '#5cad53'
     cre_colors['Ntsr1-Cre_GN220'] = '#875e24'
     cre_colors['Sst-IRES-Cre'] = '#ff944d'
-    cre_colors['Vip-IRES-Cre'] = '#ffe066'    
+    cre_colors['Vip-IRES-Cre'] = '#ffe066'
     return cre_colors
 
 

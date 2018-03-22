@@ -2,7 +2,7 @@ from __future__ import print_function
 import numpy as np
 # from FastLZeroSpikeInference import fast
 # from scipy.signal import medfilt
-from scipy.ndimage.filters import median_filter 
+from scipy.ndimage.filters import median_filter
 import sys
 from allensdk.core.brain_observatory_cache import BrainObservatoryCache
 import cPickle as pickle
@@ -25,7 +25,7 @@ class L0_analysis:
     dataset : a dataset object (returned from get_ophys_experiment_data) or ophys_experiment_id or raw data
     event_min_size : smallest allowable event in units of noise std [default: 1.0]
     noise_scale : dff traces are rescaled so that the noise std is this value [default: 0.1]
-    median_filter_1 : the length of the window for long time scale median filter detrending to 
+    median_filter_1 : the length of the window for long time scale median filter detrending to
                       estimate dff from corrected_fluorescence_traces [default: 2001]
     median_filter_2 : the length of the window for short time scale median filter detrending [default: 101]
     halflife_ms : half-life of the indicator in ms, used to override lookup [default: None]
@@ -47,12 +47,12 @@ class L0_analysis:
     >>> events = l0a.get_events()
 
     """
-    def __init__(self, dataset, 
-                       manifest_file='/allen/aibs/technology/allensdk_data/platform_boc_pre_2018_3_16/manifest_file.json', 
-                       event_min_size=2., noise_scale=.1, median_filter_1=2001, median_filter_2=101, halflife_ms=None, 
-                       sample_rate_hz=30, genotype='Unknown', L0_constrain=False, 
+    def __init__(self, dataset,
+                       manifest_file='/allen/aibs/technology/allensdk_data/platform_boc_pre_2018_3_16/manifest_file.json',
+                       event_min_size=2., noise_scale=.1, median_filter_1=2001, median_filter_2=101, halflife_ms=None,
+                       sample_rate_hz=30, genotype='Unknown', L0_constrain=False,
                        cache_directory='/allen/aibs/technology/allensdk_data/platform_events_pre_2018_3_19/'):
-        
+
 
         if type(dataset) is int:
             if manifest_file is None:
@@ -102,22 +102,22 @@ class L0_analysis:
 
     @property
     def evfile(self):
-        return os.path.join(self.cache_directory, str(self.metadata['ophys_experiment_id']) +  '_' + 
-                                                  str(hash(str(self.event_min_size) + 
-                                                  str(self.noise_scale) + 
+        return os.path.join(self.cache_directory, str(self.metadata['ophys_experiment_id']) +  '_' +
+                                                  str(hash(str(self.event_min_size) +
+                                                  str(self.noise_scale) +
                                                   str(self.median_filter_1) +
-                                                  str(self.median_filter_2) + 
-                                                  str(self.halflife) + 
+                                                  str(self.median_filter_2) +
+                                                  str(self.halflife) +
                                                   str(self.sample_rate_hz) +
                                                   str(self.L0_constrain))) + '_events.npz')
 
     @property
     def dff_file(self):
-        return os.path.join(self.cache_directory, str(self.metadata['ophys_experiment_id']) +  '_' + 
-                                                  str(hash(str(self.noise_scale) + 
-                                                  str(self.median_filter_1) + 
-                                                  str(self.median_filter_2) + 
-                                                  str(self.halflife) + 
+        return os.path.join(self.cache_directory, str(self.metadata['ophys_experiment_id']) +  '_' +
+                                                  str(hash(str(self.noise_scale) +
+                                                  str(self.median_filter_1) +
+                                                  str(self.median_filter_2) +
+                                                  str(self.halflife) +
                                                   str(self.sample_rate_hz))) + '_dff.npz')
 
     @property
@@ -134,15 +134,16 @@ class L0_analysis:
                 tf = medfilt(dff, self.median_filter_1)
                 dff -= tf
                 n = self.noise_std(dff)
-                self.noise_stds.append(n)
+
+                tf2 = medfilt(dff, self.median_filter_2)
+                tf2 = np.minimum(tf2, 2.5*n)
+                dff -= tf2
+
                 # normalize so all have noise std of noise_scale
-                dff /= n
-                dff *= self.noise_scale
-                # short time scale median filter for detrending
-                tf = medfilt(dff, self.median_filter_2)
-                # max of medium filter is 2.5 std of noise to preserve spikes
-                tf = np.minimum(tf, .25)
-                dff -= tf
+                n = self.noise_std(dff)
+                self.noise_stds.append(n)
+                dff *= self.noise_scale / n
+
                 self.print('.', end='', flush=True)
 
             self._dff_traces = dff_traces
@@ -235,7 +236,7 @@ class L0_analysis:
         tmp = self.l0(dff, self.gamma, l, self.L0_constrain)['pos_spike_mag']
 
         if len(tmp[tmp > 0]) == 0 and bisect is True:
-            return self.bracket(dff, n, s1 - 5*step, step, step_min, event_min_size) 
+            return self.bracket(dff, n, s1 - 5*step, step, step_min, event_min_size)
 
         if step == step_min:
             if np.min(tmp[tmp > 0]) > n * event_min_size and bisect is True:
@@ -249,10 +250,10 @@ class L0_analysis:
                 if len(tmp[tmp > 0]) == 0:
                     return (lasttmp, l-step)
                 else:
-                    return (tmp, l)    
+                    return (tmp, l)
 
         if len(tmp[tmp > 0]) == 0 and bisect is False:
-            return self.bracket(dff, n, s1 + .5*step - step/10, step/10, step_min, event_min_size, True) 
+            return self.bracket(dff, n, s1 + .5*step - step/10, step/10, step_min, event_min_size, True)
 
 
         if len(tmp[tmp > 0]) > 0 and np.min(tmp[tmp > 0]) < n * event_min_size:
@@ -265,7 +266,7 @@ class L0_analysis:
         if len(tmp[tmp > 0]) > 0 and np.min(tmp[tmp > 0]) > n * event_min_size and step > step_min and bisect is True:
             return self.bracket(dff, n, s1 - 5*step, step, step_min, event_min_size)
 
-    
+
     def print(self, *args, **kwargs):
         if sys.version_info[:2] < (3, 3):
             flush = kwargs.pop('flush', False)
