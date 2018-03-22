@@ -62,15 +62,22 @@ Returns
 -------
 l0 event traces (numpy array)
         '''
-    print "Loading L0 events for: ", str(session_id)
-    manifest_path = get_manifest_path()
-    from allensdk.core.brain_observatory_cache import BrainObservatoryCache
-    boc = BrainObservatoryCache(manifest_file=manifest_path)
-    data_set = boc.get_ophys_experiment_data(session_id)
-    from l0_analysis import L0_analysis
-    l0 = L0_analysis(data_set)
-    events = l0.get_events()
+    
+    event_path = get_event_path()
+    event_file = os.path.join(event_path, str(session_id)+'.npz')
+    print "Loading L0 events from: ", event_file
+    events = np.load(event_file)['ev']
     return events
+
+#    print "Loading L0 events for: ", str(session_id)
+#    manifest_path = get_manifest_path()
+#    from allensdk.core.brain_observatory_cache import BrainObservatoryCache
+#    boc = BrainObservatoryCache(manifest_file=manifest_path)
+#    data_set = boc.get_ophys_experiment_data(session_id)
+#    from l0_analysis import L0_analysis
+#    l0 = L0_analysis(data_set)
+#    events = l0.get_events()
+#    return events
     
 def get_manifest_path():
     '''provides the path to the manifest for the boc
@@ -98,6 +105,19 @@ cache path
     elif sys.platform=='darwin':
         cache_path = r'/Volumes/aibs/technology/allensdk_data/platform_events_pre_2018_3_19/'
     return cache_path
+
+def get_event_path():
+    '''returns the path for the L0 event files
+        
+Returns
+-------
+event path
+        '''
+    if sys.platform=='win32':
+        event_path = r'\\allen\aibs\technology\allensdk_data\platform_events_pre_2018_3_19\events_2'
+    elif sys.platform=='darwin':
+        event_path = r'/Volumes/aibs/technology/allensdk_data/platform_events_pre_2018_3_19/events_2'
+    return event_path
 
 def get_running_speed(session_id):
     '''uses allenSDK to get the running speed for a specified session
