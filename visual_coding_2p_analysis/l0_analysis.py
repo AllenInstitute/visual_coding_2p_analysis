@@ -51,7 +51,7 @@ class L0_analysis:
                        manifest_file='/allen/aibs/technology/allensdk_data/platform_boc_pre_2018_3_16/manifest_file.json',
                        event_min_size=2., noise_scale=.1, median_filter_1=5401, median_filter_2=101, halflife_ms=None,
                        sample_rate_hz=30, genotype='Unknown', L0_constrain=False,
-                       cache_directory='/allen/aibs/technology/allensdk_data/platform_events_pre_2018_3_19/'):
+                       cache_directory='/allen/aibs/technology/allensdk_data/platform_events_pre_2018_3_19/', use_cache=True):
 
 
         if type(dataset) is int:
@@ -79,6 +79,7 @@ class L0_analysis:
         else:
             self.halflife = halflife_ms
 
+        self.use_cache = use_cache
         self.median_filter_1 = median_filter_1
         self.median_filter_2 = median_filter_2
         self.L0_constrain = L0_constrain
@@ -124,7 +125,7 @@ class L0_analysis:
 
     @property
     def dff_traces(self):
-        if self._dff_traces is None and os.path.isfile(self.dff_file):
+        if self._dff_traces is None and os.path.isfile(self.dff_file) and self.use_cache:
             self._dff_traces = np.load(self.dff_file)['dff']
             self._noise_stds = np.load(self.dff_file)['noise_stds']
             self._num_small_baseline_frames = np.load(self.dff_file)['num_small_baseline_frames']
@@ -161,7 +162,7 @@ class L0_analysis:
             self._noise_stds = noise_stds
             self._num_small_baseline_frames = num_small_baseline_frames
 
-            np.savez(self.dff_file, dff=dff_traces, noise_stds=noise_stds, num_small_baseline_frames=np.array(num_small_baseline_frames))
+            if self.use_cache: np.savez(self.dff_file, dff=dff_traces, noise_stds=noise_stds, num_small_baseline_frames=np.array(num_small_baseline_frames))
             self.print('done!')
         return self._dff_traces, self._noise_stds, self._num_small_baseline_frames
 
@@ -217,7 +218,7 @@ class L0_analysis:
         if event_min_size is not None:
             self.event_min_size = event_min_size
 
-        if os.path.isfile(self.evfile):
+        if os.path.isfile(self.evfile) and self.use_cache:
             events = np.load(self.evfile)['ev']
         else:
 
@@ -239,7 +240,7 @@ class L0_analysis:
                     self.lambdas.append(l)
                 self.print('.', end='', flush=True)
             events = np.array(events)
-            np.savez(self.evfile, ev=events)
+            if self.use_cache: np.savez(self.evfile, ev=events)
             self.print('done!')
         return np.array(events)
 
