@@ -336,6 +336,7 @@ peak dataframe
         store['sweep_events'] = self.sweep_events
         store['mean_sweep_events'] = self.mean_sweep_events
         store['sweep_p_values'] = self.sweep_p_values
+        store['running_speed'] = self.running_speed
         store['peak'] = self.peak
         store.close()
         f = h5py.File(save_file, 'r+')

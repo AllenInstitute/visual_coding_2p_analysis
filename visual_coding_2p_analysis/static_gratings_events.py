@@ -11,7 +11,6 @@ import os, h5py
 import scipy.stats as st
 from scipy.optimize import curve_fit
 import core
-import sweep_events_shuffle
 
 def do_sweep_mean(x):
     return x[28:35].mean()
@@ -317,18 +316,18 @@ peak dataframe
         f.close()
         
 if __name__=='__main__':
-#    session_id = 511458874
-#    sg = StaticGratings(session_id=session_id)
+    session_id = 511458874
+    sg = StaticGratings(session_id=session_id)
 
-    from allensdk.core.brain_observatory_cache import BrainObservatoryCache
-    fail=[]
-    manifest_path = core.get_manifest_path()
-    boc = BrainObservatoryCache(manifest_file = manifest_path)
-    exp = pd.DataFrame(boc.get_ophys_experiments())
-    exp_dg = exp[exp.session_type=='three_session_B'].id.values
-    for a in exp_dg:
-        try:
-            session_id = a
-            sg = StaticGratings(session_id=session_id)
-        except:
-            fail.append(a)
+#    from allensdk.core.brain_observatory_cache import BrainObservatoryCache
+#    fail=[]
+#    manifest_path = core.get_manifest_path()
+#    boc = BrainObservatoryCache(manifest_file = manifest_path)
+#    exp = pd.DataFrame(boc.get_ophys_experiments())
+#    exp_dg = exp[exp.session_type=='three_session_B'].id.values
+#    for a in exp_dg:
+#        try:
+#            session_id = a
+#            sg = StaticGratings(session_id=session_id)
+#        except:
+#            fail.append(a)
