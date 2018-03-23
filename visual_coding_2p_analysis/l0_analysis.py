@@ -51,7 +51,7 @@ class L0_analysis:
                        manifest_file='/allen/aibs/technology/allensdk_data/platform_boc_pre_2018_3_16/manifest_file.json',
                        event_min_size=2., noise_scale=.1, median_filter_1=5401, median_filter_2=101, halflife_ms=None,
                        sample_rate_hz=30, genotype='Unknown', L0_constrain=False,
-                       cache_directory='/allen/aibs/technology/allensdk_data/platform_events_pre_2018_3_19/'):
+                       cache_directory='/allen/aibs/technology/allensdk_data/platform_events_pre_2018_3_19/', use_cache=True):
 
 
         if type(dataset) is int:
@@ -79,11 +79,14 @@ class L0_analysis:
         else:
             self.halflife = halflife_ms
 
+        self.use_cache = use_cache
         self.median_filter_1 = median_filter_1
         self.median_filter_2 = median_filter_2
         self.L0_constrain = L0_constrain
         self.cache_directory = cache_directory
 
+        self._noise_stds = None
+        self._num_small_baseline_frames = None
         self._dff_traces = None
         self._fit_params = None
 
@@ -122,14 +125,17 @@ class L0_analysis:
 
     @property
     def dff_traces(self):
-        if self._dff_traces is None and os.path.isfile(self.dff_file):
+        if self._dff_traces is None and os.path.isfile(self.dff_file) and self.use_cache:
             self._dff_traces = np.load(self.dff_file)['dff']
+            self._noise_stds = np.load(self.dff_file)['noise_stds']
+            self._num_small_baseline_frames = np.load(self.dff_file)['num_small_baseline_frames']
+
         elif self._dff_traces is None:
-            self.print('Median filter detrending in progress', end='', flush=True)
-            self.noise_stds = []
+            self.print('Computing df/f', end='', flush=True)
             dff_traces = np.copy(self.corrected_fluorescence_traces)
 
             num_small_baseline_frames = []
+            noise_stds = []
 
             for dff in dff_traces:
 
@@ -143,7 +149,7 @@ class L0_analysis:
                 num_small_baseline_frames.append(np.sum(tf <= sigma_f))
 
                 sigma_dff = self.noise_std(dff)
-                self.noise_stds.append(sigma_dff)
+                noise_stds.append(sigma_dff)
 
                 # short timescale detrending
                 tf = medfilt(dff, self.median_filter_2)
@@ -153,9 +159,13 @@ class L0_analysis:
                 self.print('.', end='', flush=True)
 
             self._dff_traces = dff_traces
-            np.savez(self.dff_file, dff=dff_traces, num_low_baseline=np.array(num_small_baseline_frames))
+            self._noise_stds = noise_stds
+            self._num_small_baseline_frames = num_small_baseline_frames
+
+            if self.use_cache: np.savez(self.dff_file, dff=dff_traces, noise_stds=noise_stds, num_small_baseline_frames=np.array(num_small_baseline_frames))
             self.print('done!')
-        return self._dff_traces
+        return self._dff_traces, self._noise_stds, self._num_small_baseline_frames
+
 
     @property
     def gamma(self):
@@ -208,15 +218,15 @@ class L0_analysis:
         if event_min_size is not None:
             self.event_min_size = event_min_size
 
-        if os.path.isfile(self.evfile):
+        if os.path.isfile(self.evfile) and self.use_cache:
             events = np.load(self.evfile)['ev']
         else:
 
             self.print('Calculating events in progress', flush=True)
 
             events = []
-            for n, dff in enumerate(self.dff_traces):
-                dff *= self.noise_scale / self.noise_stds[n]
+            for n, dff in enumerate(self.dff_traces[0]):
+                dff *= self.noise_scale / self.dff_traces[1][n]
 
                 if any(np.isnan(dff)):
                     tmp = np.NaN*np.zeros(dff.shape)
@@ -226,11 +236,11 @@ class L0_analysis:
 
                     (tmp, l) = self.bracket(tmp, self.noise_scale, 0, self.noise_scale, .0001, self.event_min_size)
 
-                    events.append(tmp * self.noise_stds[n] / self.noise_scale)
+                    events.append(tmp * self.dff_traces[1][n] / self.noise_scale)
                     self.lambdas.append(l)
                 self.print('.', end='', flush=True)
             events = np.array(events)
-            np.savez(self.evfile, ev=events)
+            if self.use_cache: np.savez(self.evfile, ev=events)
             self.print('done!')
         return np.array(events)
 
