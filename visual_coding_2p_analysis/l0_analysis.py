@@ -245,18 +245,14 @@ class L0_analysis:
         return np.array(events)
 
 
-    def bisection(self, dff, n, event_min_size, left=0., right=100., max_its=100, eps=.0001):
+    def bisection(self, dff, n, event_min_size, left=0., right=1., max_its=100, eps=.0001):
 
-        it = 0
 
         # find right endpoint with no events
         tmp_right = self.l0(dff, self.gamma, right, self.L0_constrain)['pos_spike_mag']
         nz_right = (tmp_right > 0)
-        if np.sum(nz_right) > 0:
-            min_size_right = np.amin(tmp_right[nz_right])
-        else:
-            min_size_right = np.infty
 
+        it = 0
         while it <= max_its:
             it += 1
 
@@ -285,24 +281,33 @@ class L0_analysis:
             nz_mid = (tmp_mid > 0)
             nz_right = (tmp_right > 0)
 
-            if np.sum(nz_left) > 0: min_size_left = np.amin(tmp_left[nz_left])
-            else: min_size_left = np.infty
+            if np.sum(nz_left) > 0:
 
-            if np.sum(nz_mid) > 0: min_size_mid = np.amin(tmp_mid[nz_mid])
-            else: min_size_mid = np.infty
-
-            if np.sum(nz_right) > 0: min_size_right = np.amin(tmp_right[nz_right])
-            else: min_size_right = np.infty
-
-            if min_size_left == min_size_right: # move left
-                right = left
-                left = max(0, left-mid)
-
-            else: # bisect
-                if (min_size_mid < n * event_min_size) and (min_size_left < n * event_min_size):
-                    left = mid
+                min_size_left = np.amin(tmp_left[nz_left]) # have events at left point
+                if np.sum(nz_mid) > 0:
+                    min_size_mid = np.amin(tmp_mid[nz_mid])
                 else:
-                    right = mid
+                    min_size_mid = np.infty
+
+                if np.sum(nz_right) > 0:
+                    min_size_right = np.amin(tmp_right[nz_right])
+                else:
+                    min_size_right = np.infty
+
+                if min_size_left == min_size_right:  # move left
+                    right = left
+                    left = max(0, left - mid)
+
+                else:  # bisect
+                    if (min_size_mid < n * event_min_size) and (min_size_left < n * event_min_size):
+                        left = mid
+                    else:
+                        right = mid
+
+            else:
+                right = left
+                left = max(0, left - mid)
+
 
         return tmp_mid, mid
 
