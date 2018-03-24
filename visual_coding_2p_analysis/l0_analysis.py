@@ -226,7 +226,6 @@ class L0_analysis:
 
             events = []
             for n, dff in enumerate(self.dff_traces[0]):
-                dff *= self.noise_scale / self.dff_traces[1][n]
 
                 if any(np.isnan(dff)):
                     tmp = np.NaN*np.zeros(dff.shape)
@@ -234,15 +233,79 @@ class L0_analysis:
                 else:
                     tmp = dff[:]
 
-                    (tmp, l) = self.bracket(tmp, self.noise_scale, 0, self.noise_scale, .0001, self.event_min_size)
+                    # (tmp, l) = self.bracket(tmp, self.dff_traces[1][n], 0, 10*self.noise_scale, .0001, self.event_min_size)
+                    (tmp, l) = self.bisection(tmp, self.dff_traces[1][n], self.event_min_size)
 
-                    events.append(tmp * self.dff_traces[1][n] / self.noise_scale)
+                    events.append(tmp)
                     self.lambdas.append(l)
                 self.print('.', end='', flush=True)
             events = np.array(events)
             if self.use_cache: np.savez(self.evfile, ev=events)
             self.print('done!')
         return np.array(events)
+
+
+    def bisection(self, dff, n, event_min_size, left=0., right=100., max_its=100, eps=.0001):
+
+        it = 0
+
+        # find right endpoint with no events
+        tmp_right = self.l0(dff, self.gamma, right, self.L0_constrain)['pos_spike_mag']
+        nz_right = (tmp_right > 0)
+        if np.sum(nz_right) > 0:
+            min_size_right = np.amin(tmp_right[nz_right])
+        else:
+            min_size_right = np.infty
+
+        while it <= max_its:
+            it += 1
+
+            if np.sum(nz_right) > 0:
+                right *= 2
+                tmp_right = self.l0(dff, self.gamma, right, self.L0_constrain)['pos_spike_mag']
+                nz_right = (tmp_right > 0)
+            else:
+                break
+
+        # bisection for lambda where lose events at min size
+        it = 0
+        while it <= max_its:
+
+            it += 1
+            if (right - left) < eps:
+                break
+
+            mid = (right - left) / 2.
+
+            tmp_left = self.l0(dff, self.gamma, left, self.L0_constrain)['pos_spike_mag']
+            tmp_mid = self.l0(dff, self.gamma, mid, self.L0_constrain)['pos_spike_mag']
+            tmp_right = self.l0(dff, self.gamma, right, self.L0_constrain)['pos_spike_mag']
+
+            nz_left = (tmp_left > 0)
+            nz_mid = (tmp_mid > 0)
+            nz_right = (tmp_right > 0)
+
+            if np.sum(nz_left) > 0: min_size_left = np.amin(tmp_left[nz_left])
+            else: min_size_left = np.infty
+
+            if np.sum(nz_mid) > 0: min_size_mid = np.amin(tmp_mid[nz_mid])
+            else: min_size_mid = np.infty
+
+            if np.sum(nz_right) > 0: min_size_right = np.amin(tmp_right[nz_right])
+            else: min_size_right = np.infty
+
+            if min_size_left == min_size_right: # move left
+                right = left
+                left = max(0, left-mid)
+
+            else: # bisect
+                if (min_size_mid < n * event_min_size) and (min_size_left < n * event_min_size):
+                    left = mid
+                else:
+                    right = mid
+
+        return tmp_mid, mid
+
 
     def bracket(self, dff, n, s1, step, step_min, event_min_size, bisect=False):
         l = s1 + step
