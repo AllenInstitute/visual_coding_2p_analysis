@@ -247,13 +247,12 @@ class L0_analysis:
 
     def bisection(self, dff, n, event_min_size, left=0., right=1., max_its=100, eps=.0001):
 
-
         # find right endpoint with no events
         tmp_right = self.l0(dff, self.gamma, right, self.L0_constrain)['pos_spike_mag']
         nz_right = (tmp_right > 0)
 
         it = 0
-        while it <= max_its:
+        while it <= 20:
             it += 1
 
             if np.sum(nz_right) > 0:
@@ -281,9 +280,9 @@ class L0_analysis:
             nz_mid = (tmp_mid > 0)
             nz_right = (tmp_right > 0)
 
-            if np.sum(nz_left) > 0:
+            if np.sum(nz_left) > 0: # have events at left point
 
-                min_size_left = np.amin(tmp_left[nz_left]) # have events at left point
+                min_size_left = np.amin(tmp_left[nz_left])
                 if np.sum(nz_mid) > 0:
                     min_size_mid = np.amin(tmp_mid[nz_mid])
                 else:
@@ -305,7 +304,6 @@ class L0_analysis:
                         right = mid
 
             else:
-                right = left
                 left = max(0, left - mid)
 
 
