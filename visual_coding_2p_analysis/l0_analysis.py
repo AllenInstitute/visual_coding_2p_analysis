@@ -91,7 +91,6 @@ class L0_analysis:
         self._fit_params = None
 
         self._gamma = None
-
         self.lambdas = []
         self.l0_func = None
 
@@ -164,6 +163,8 @@ class L0_analysis:
 
             if self.use_cache: np.savez(self.dff_file, dff=dff_traces, noise_stds=noise_stds, num_small_baseline_frames=np.array(num_small_baseline_frames))
             self.print('done!')
+
+        self.min_detected_event_sizes = [[] for n in range(self._dff_traces.shape[0])]
         return self._dff_traces, self._noise_stds, self._num_small_baseline_frames
 
 
@@ -226,7 +227,6 @@ class L0_analysis:
 
             events = []
             for n, dff in enumerate(self.dff_traces[0]):
-
                 if any(np.isnan(dff)):
                     tmp = np.NaN*np.zeros(dff.shape)
                     self._lambdas.append(np.NaN)
@@ -262,7 +262,7 @@ class L0_analysis:
             else:
                 break
 
-        # bisection for lambda where lose events at min size
+        # bisection for lambda minimizing num events < min size
         it = 0
         while it <= max_its:
 
@@ -270,7 +270,7 @@ class L0_analysis:
             if (right - left) < eps:
                 break
 
-            mid = (right - left) / 2.
+            mid = left + (right - left) / 2.
 
             tmp_left = self.l0(dff, self.gamma, left, self.L0_constrain)['pos_spike_mag']
             tmp_mid = self.l0(dff, self.gamma, mid, self.L0_constrain)['pos_spike_mag']
@@ -280,34 +280,38 @@ class L0_analysis:
             nz_mid = (tmp_mid > 0)
             nz_right = (tmp_right > 0)
 
-            if np.sum(nz_left) > 0: # have events at left point
+            # if np.sum(nz_left) > 0: # have events at left point
 
-                min_size_left = np.amin(tmp_left[nz_left])
-                if np.sum(nz_mid) > 0:
-                    min_size_mid = np.amin(tmp_mid[nz_mid])
-                else:
-                    min_size_mid = np.infty
+            num_small_events_left = np.sum(tmp_left[nz_left] < n*event_min_size)
 
-                if np.sum(nz_right) > 0:
-                    min_size_right = np.amin(tmp_right[nz_right])
-                else:
-                    min_size_right = np.infty
-
-                if min_size_left == min_size_right:  # move left
-                    right = left
-                    left = max(0, left - mid)
-
-                else:  # bisect
-                    if (min_size_mid < n * event_min_size) and (min_size_left < n * event_min_size):
-                        left = mid
-                    else:
-                        right = mid
-
+            if np.sum(nz_mid) > 0:
+                num_small_events_mid = np.sum(tmp_mid[nz_mid] < n*event_min_size)
             else:
-                left = max(0, left - mid)
+                num_small_events_mid = -np.infty
 
+            if np.sum(nz_right) > 0:
+                num_small_events_right = np.sum(tmp_right[nz_right] < n*event_min_size)
+            else:
+                num_small_events_right = -np.infty
 
-        return tmp_mid, mid
+            print('lambda_left: ' + str(left))
+            print('lambda_mid: ' + str(mid))
+            print('lambda_right: ' + str(right))
+
+            print('num events_left: ' + str(num_small_events_left))
+            print('num events_mid: ' + str(num_small_events_mid))
+            print('num events_right: ' + str(num_small_events_right))
+
+            if np.sign(num_small_events_mid) == np.sign(num_small_events_left):
+                left = mid
+            else:
+                right = mid
+
+            # else:
+            #     print('no events at left point')
+            #     left = max(0, left - (mid-left))
+
+        return tmp_left, left
 
 
     def bracket(self, dff, n, s1, step, step_min, event_min_size, bisect=False):
