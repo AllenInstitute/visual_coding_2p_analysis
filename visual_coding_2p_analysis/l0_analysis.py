@@ -161,7 +161,7 @@ class L0_analysis:
             self._noise_stds = noise_stds
             self._num_small_baseline_frames = num_small_baseline_frames
 
-            if self.use_cache: np.savez(self.dff_file, dff=dff_traces, noise_stds=noise_stds, num_small_baseline_frames=np.array(num_small_baseline_frames))
+            if self.use_cache: np.savez(self.dff_file, dff=dff_traces, noise_stds=np.array(noise_stds), num_small_baseline_frames=np.array(num_small_baseline_frames))
             self.print('done!')
 
         self.min_detected_event_sizes = [[] for n in range(self._dff_traces.shape[0])]
