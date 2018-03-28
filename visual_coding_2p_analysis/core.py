@@ -21,12 +21,19 @@ Returns
 save_path
         '''
 
-    if sys.platform=='win32':
-        save_path = r'\\allen\programs\braintv\workgroups\nc-ophys\Saskia\Visual Coding Event Analysis'
-    elif sys.platform=='darwin':
-        save_path = r'/Volumes/programs/braintv/workgroups/nc-ophys/Saskia/Visual Coding Event Analysis'
-    elif sys.platform=='linux2':
-        save_path = r'/allen/programs/braintv/workgroups/nc-ophys/Saskia/Visual Coding Event Analysis'
+    # if sys.platform=='win32':
+    #     save_path = r'\\allen\programs\braintv\workgroups\nc-ophys\Saskia\Visual Coding Event Analysis'
+    # elif sys.platform=='darwin':
+    #     save_path = r'/Volumes/programs/braintv/workgroups/nc-ophys/Saskia/Visual Coding Event Analysis'
+    # elif sys.platform=='linux2':
+    #     save_path = r'/allen/programs/braintv/workgroups/nc-ophys/Saskia/Visual Coding Event Analysis'
+
+    if sys.platform == 'win32':
+        save_path = r'\\allen\aibs\technology\allensdk_data\platform_analysis_files_pre_2018_3_28'
+    elif sys.platform == 'darwin':
+        save_path = r'/Volumes/aibs/technology/allensdk_data/platform_analysis_files_pre_2018_3_28'
+    elif sys.platform == 'linux2':
+        save_path = '/allen/aibs/technology/allensdk_data/platform_analysis_files_pre_2018_3_28'
     return save_path
 
 
