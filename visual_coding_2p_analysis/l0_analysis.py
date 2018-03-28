@@ -112,7 +112,8 @@ class L0_analysis:
                                                   str(self.median_filter_2) +
                                                   str(self.halflife) +
                                                   str(self.sample_rate_hz) +
-                                                  str(self.L0_constrain))) + '_events.npz')
+                                                  str(self.L0_constrain) +
+                                                  str(self.use_bisection))) + '_events.npz')
 
     @property
     def dff_file(self):
