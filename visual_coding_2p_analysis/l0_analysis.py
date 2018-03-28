@@ -217,9 +217,12 @@ class L0_analysis:
         return 1.4826*MAD
 
 
-    def get_events(self, event_min_size=None):
+    def get_events(self, event_min_size=None, use_bisection=None):
         if event_min_size is not None:
             self.event_min_size = event_min_size
+
+        if use_bisection is not None:
+            self.use_bisection = use_bisection
 
         if os.path.isfile(self.evfile) and self.use_cache:
             events = np.load(self.evfile)['ev']
