@@ -51,7 +51,7 @@ class L0_analysis:
                        manifest_file='/allen/aibs/technology/allensdk_data/platform_boc_pre_2018_3_16/manifest.json',
                        event_min_size=2., noise_scale=.1, median_filter_1=5401, median_filter_2=101, halflife_ms=None,
                        sample_rate_hz=30, genotype='Unknown', L0_constrain=False,
-                       cache_directory='/allen/aibs/technology/allensdk_data/platform_events_pre_2018_3_19/', use_cache=True):
+                       cache_directory='/allen/aibs/technology/allensdk_data/platform_events_pre_2018_3_19/', use_cache=True, use_bisection=True):
 
 
         if type(dataset) is int:
@@ -80,6 +80,7 @@ class L0_analysis:
             self.halflife = halflife_ms
 
         self.use_cache = use_cache
+        self.use_bisection = use_bisection
         self.median_filter_1 = median_filter_1
         self.median_filter_2 = median_filter_2
         self.L0_constrain = L0_constrain
@@ -233,8 +234,11 @@ class L0_analysis:
                 else:
                     tmp = dff[:]
 
-                    # (tmp, l) = self.bracket(tmp, self.dff_traces[1][n], 0, 10*self.noise_scale, .0001, self.event_min_size)
-                    (tmp, l) = self.bisection(tmp, self.dff_traces[1][n], self.event_min_size)
+                    if self.use_bisection:
+                        (tmp, l) = self.bisection(tmp, self.dff_traces[1][n], self.event_min_size)
+                    else:
+                        (tmp, l) = self.bracket(tmp, self.dff_traces[1][n], 0, 10*self.noise_scale, .0001, self.event_min_size)
+
 
                     events.append(tmp)
                     self.lambdas.append(l)
