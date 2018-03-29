@@ -97,11 +97,11 @@ Returns
 manifest path
         '''
     if sys.platform=='win32':
-        manifest_path = r"\\allen\aibs\technology\allensdk_data\platform_boc_pre_2018_3_16\manifest.json"
+        manifest_path = r"\\allen\programs\braintv\workgroups\nc-ophys\ObservatoryPlatformPaperAnalysis\platform_boc_pre_2018_3_16\manifest.json"
     elif sys.platform=='darwin':
-        manifest_path = r"/Volumes/aibs/technology/allensdk_data/platform_boc_pre_2018_3_16/manifest.json"
+        manifest_path = r"/Volumes/programs/braintv/workgroups/nc-ophys/ObservatoryPlatformPaperAnalysis/platform_boc_pre_2018_3_16/manifest.json"
     elif sys.platform=='linux2':
-        manifest_path = r"/allen/aibs/technology/allensdk_data/platform_boc_pre_2018_3_16/manifest.json"
+        manifest_path = r"/allen/programs/braintv/workgroups/nc-ophys/ObservatoryPlatformPaperAnalysis/platform_boc_pre_2018_3_16/manifest.json"
 
 
     return manifest_path
@@ -114,16 +114,16 @@ Returns
 cache path
         '''
     if sys.platform=='win32':
-        cache_path = r'\\allen\aibs\technology\allensdk_data\platform_events_pre_2018_3_19'
+        cache_path = r"\\allen\programs\braintv\workgroups\nc-ophys\ObservatoryPlatformPaperAnalysis\events_pre_2018_3_29"
     elif sys.platform=='darwin':
-        cache_path = r'/Volumes/aibs/technology/allensdk_data/platform_events_pre_2018_3_19/'
+        cache_path = r'/Volumes/programs/braintv/workgroups/nc-ophys/ObservatoryPlatformPaperAnalysis/events_pre_2018_3_29/'
     elif sys.platform=='linux2':
-        cache_path = r'/allen/aibs/technology/allensdk_data/platform_events_pre_2018_3_19/'
+        cache_path = r'/allen/programs/braintv/workgroups/nc-ophys/ObservatoryPlatformPaperAnalysis/events_pre_2018_3_29/'
     return cache_path
 
 def get_event_path():
     '''returns the path for the L0 event files
-
+This should be deprecated now. The l0_analysis module doesn't use hash anymore, so no need to use this path.
 Returns
 -------
 event path
