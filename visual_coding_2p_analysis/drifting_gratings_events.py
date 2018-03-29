@@ -41,7 +41,7 @@ class DriftingGratings:
 
         self.session_id = session_id
         save_path_head = core.get_save_path()
-        self.save_path = os.path.join(save_path_head, 'Drifting Gratings')
+        self.save_path = os.path.join(save_path_head, 'DriftingGratings')
         self.l0_events = core.get_L0_events(self.session_id)
         self.stim_table, self.numbercells, self.specimen_ids = core.get_stim_table(self.session_id, 'drifting_gratings')
         self.dxcm = core.get_running_speed(self.session_id)
