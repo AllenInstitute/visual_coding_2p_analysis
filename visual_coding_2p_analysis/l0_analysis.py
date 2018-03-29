@@ -8,6 +8,7 @@ from allensdk.core.brain_observatory_cache import BrainObservatoryCache
 import cPickle as pickle
 import warnings
 import os
+import pandas as pd
 
 # l0 = fast.arfpop
 medfilt = lambda x, s: median_filter(x, s, mode='constant')
@@ -48,10 +49,10 @@ class L0_analysis:
 
     """
     def __init__(self, dataset,
-                       manifest_file='/allen/aibs/technology/allensdk_data/platform_boc_pre_2018_3_16/manifest.json',
+                       manifest_file='/allen/programs/braintv/workgroups/nc-ophys/ObservatoryPlatformPaperAnalysis/platform_boc_pre_2018_3_16/manifest.json',
                        event_min_size=2., noise_scale=.1, median_filter_1=5401, median_filter_2=101, halflife_ms=None,
                        sample_rate_hz=30, genotype='Unknown', L0_constrain=False,
-                       cache_directory='/allen/aibs/technology/allensdk_data/platform_events_pre_2018_3_19/', use_cache=True, use_bisection=True):
+                       cache_directory='/allen/programs/braintv/workgroups/nc-ophys/ObservatoryPlatformPaperAnalysis/events_pre_2018_3_29/', use_cache=True, use_bisection=True):
 
 
         if type(dataset) is int:
@@ -104,25 +105,46 @@ class L0_analysis:
         return self.l0_func
 
     @property
+    def trace_info_file(self):
+        return os.path.join(self.cache_directory, 'event_info_dictionary.h5')
+
+    @property
     def evfile(self):
+        # return os.path.join(self.cache_directory, str(self.metadata['ophys_experiment_id']) +  '_' +
+        #                                           str(hash(str(self.event_min_size) +
+        #                                           str(self.noise_scale) +
+        #                                           str(self.median_filter_1) +
+        #                                           str(self.median_filter_2) +
+        #                                           str(self.halflife) +
+        #                                           str(self.sample_rate_hz) +
+        #                                           str(self.L0_constrain) +
+        #                                           str(self.use_bisection))) + '_events.npz')
+
         return os.path.join(self.cache_directory, str(self.metadata['ophys_experiment_id']) +  '_' +
-                                                  str(hash(str(self.event_min_size) +
-                                                  str(self.noise_scale) +
-                                                  str(self.median_filter_1) +
-                                                  str(self.median_filter_2) +
-                                                  str(self.halflife) +
-                                                  str(self.sample_rate_hz) +
-                                                  str(self.L0_constrain) +
-                                                  str(self.use_bisection))) + '_events.npz')
+                                                  str(self.event_min_size) + '_' +
+                                                  str(self.noise_scale) + '_' +
+                                                  str(self.median_filter_1) + '_' +
+                                                  str(self.median_filter_2) + '_' +
+                                                  str(self.halflife) + '_' +
+                                                  str(self.sample_rate_hz) + '_' +
+                                                  str(self.L0_constrain) + '_' +
+                                                  str(self.use_bisection) + '_events.npz')
 
     @property
     def dff_file(self):
-        return os.path.join(self.cache_directory, str(self.metadata['ophys_experiment_id']) +  '_' +
-                                                  str(hash(str(self.noise_scale) +
-                                                  str(self.median_filter_1) +
-                                                  str(self.median_filter_2) +
-                                                  str(self.halflife) +
-                                                  str(self.sample_rate_hz))) + '_dff.npz')
+        # return os.path.join(self.cache_directory, str(self.metadata['ophys_experiment_id']) +  '_' +
+        #                                           str(hash(str(self.noise_scale) +
+        #                                           str(self.median_filter_1) +
+        #                                           str(self.median_filter_2) +
+        #                                           str(self.halflife) +
+        #                                           str(self.sample_rate_hz))) + '_dff.npz')
+
+        return os.path.join(self.cache_directory, str(self.metadata['ophys_experiment_id']) + '_' +
+                                                  str(self.noise_scale) + '_' +
+                                                  str(self.median_filter_1) + '_' +
+                                                  str(self.median_filter_2) + '_' +
+                                                  str(self.halflife) + '_' +
+                                                  str(self.sample_rate_hz) + '_dff.npz')
 
     @property
     def dff_traces(self):
@@ -231,6 +253,8 @@ class L0_analysis:
             self.print('Calculating events in progress', flush=True)
 
             events = []
+
+
             for n, dff in enumerate(self.dff_traces[0]):
                 if any(np.isnan(dff)):
                     tmp = np.NaN*np.zeros(dff.shape)
@@ -248,7 +272,30 @@ class L0_analysis:
                     self.lambdas.append(l)
                 self.print('.', end='', flush=True)
             events = np.array(events)
-            if self.use_cache: np.savez(self.evfile, ev=events)
+            if self.use_cache:
+                np.savez(self.evfile, ev=events)
+
+                store = pd.HDFStore(self.trace_info_file)
+                for n in events.shape[0]:
+
+                    nz_tmp = (events[n] > 0)
+                    small_event_ind = (events[n][nz_tmp] < self.dff_traces[1][n] * self.event_min_size)
+
+                    trace_info = pd.DataFrame(columns=('ophys_experiment_id', 'cell_index'
+                    'num_small_baseline_frames', 'num_small_events', 'num_events', 'total_small_event_weight',
+                    'total_event_weight'), index=range(events.shape[0]))
+
+                    trace_info['ophys_experiment_id'] = self.metadata['ophys_experiment_id']
+                    trace_info['cell_index'] = n
+                    trace_info['num_small_baseline_frames'] = self.dff_traces[2][n]
+                    trace_info['num_small_events'] = np.sum(small_event_ind)
+                    trace_info['num_events'] = np.sum(nz_tmp)
+                    trace_info['total_small_event_weight'] = np.sum(events[n][small_event_ind])
+                    trace_info['total_event_weight'] = np.sum(events[n][nz_tmp])
+
+                    store.append(trace_info)
+                    store.close()
+
             self.print('done!')
         return np.array(events)
 
@@ -281,39 +328,40 @@ class L0_analysis:
             mid = left + (right - left) / 2.
 
             tmp_left = self.l0(dff, self.gamma, left, self.L0_constrain)['pos_spike_mag']
-            tmp_mid = self.l0(dff, self.gamma, mid, self.L0_constrain)['pos_spike_mag']
-            tmp_right = self.l0(dff, self.gamma, right, self.L0_constrain)['pos_spike_mag']
-
             nz_left = (tmp_left > 0)
-            nz_mid = (tmp_mid > 0)
-            nz_right = (tmp_right > 0)
-
-            # if np.sum(nz_left) > 0: # have events at left point
-
             num_small_events_left = np.sum(tmp_left[nz_left] < n*event_min_size)
 
-            if np.sum(nz_mid) > 0:
-                num_small_events_mid = np.sum(tmp_mid[nz_mid] < n*event_min_size)
+            if num_small_events_left == 0:
+                break
             else:
-                num_small_events_mid = -np.infty
+                tmp_mid = self.l0(dff, self.gamma, mid, self.L0_constrain)['pos_spike_mag']
+                tmp_right = self.l0(dff, self.gamma, right, self.L0_constrain)['pos_spike_mag']
 
-            if np.sum(nz_right) > 0:
-                num_small_events_right = np.sum(tmp_right[nz_right] < n*event_min_size)
-            else:
-                num_small_events_right = -np.infty
+                nz_mid = (tmp_mid > 0)
+                nz_right = (tmp_right > 0)
 
-            print('lambda_left: ' + str(left))
-            print('lambda_mid: ' + str(mid))
-            print('lambda_right: ' + str(right))
+                if np.sum(nz_mid) > 0:
+                    num_small_events_mid = np.sum(tmp_mid[nz_mid] < n*event_min_size)
+                else:
+                    num_small_events_mid = -np.infty
 
-            print('num events_left: ' + str(num_small_events_left))
-            print('num events_mid: ' + str(num_small_events_mid))
-            print('num events_right: ' + str(num_small_events_right))
+                if np.sum(nz_right) > 0:
+                    num_small_events_right = np.sum(tmp_right[nz_right] < n*event_min_size)
+                else:
+                    num_small_events_right = -np.infty
 
-            if np.sign(num_small_events_mid) == np.sign(num_small_events_left):
-                left = mid
-            else:
-                right = mid
+                print('lambda_left: ' + str(left))
+                print('lambda_mid: ' + str(mid))
+                print('lambda_right: ' + str(right))
+
+                print('num events_left: ' + str(num_small_events_left))
+                print('num events_mid: ' + str(num_small_events_mid))
+                print('num events_right: ' + str(num_small_events_right))
+
+                if np.sign(num_small_events_mid) == np.sign(num_small_events_left):
+                    left = mid
+                else:
+                    right = mid
 
             # else:
             #     print('no events at left point')
