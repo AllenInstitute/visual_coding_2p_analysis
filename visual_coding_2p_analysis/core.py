@@ -178,9 +178,9 @@ cre color dictionary
     cre_colors['Fezf2-CreER'] = '#3A6604'
     cre_colors['Tlx3-Cre_PL56'] = '#99B20D'
     cre_colors['Rbp4-Cre_KL100'] = '#5cad53'
-    cre_colors['Ntsr1-Cre_GN220'] = '#875e24'
-    cre_colors['Sst-IRES-Cre'] = '#ff944d'
-    cre_colors['Vip-IRES-Cre'] = '#ffe066'
+    cre_colors['Ntsr1-Cre_GN220'] = '#ff3b39'
+    cre_colors['Sst-IRES-Cre'] = '#7B5217'
+    cre_colors['Vip-IRES-Cre'] = '#b49139'
     return cre_colors
 
 
