@@ -70,7 +70,7 @@ class L0_analysis:
             self.metadata = {'genotype':genotype, 'ophys_experiment_id':999}
             self.corrected_fluorescence_traces = dataset
 
-
+        self.num_cells = self.corrected_fluorescence_traces.shape[0]
         self.sample_rate_hz = sample_rate_hz
         self.event_min_size = event_min_size
         self.noise_scale = noise_scale
@@ -276,7 +276,7 @@ class L0_analysis:
                 np.savez(self.evfile, ev=events)
 
                 store = pd.HDFStore(self.trace_info_file)
-                for n in events.shape[0]:
+                for n in range(events.shape[0]):
 
                     nz_tmp = (events[n] > 0)
                     small_event_ind = (events[n][nz_tmp] < self.dff_traces[1][n] * self.event_min_size)
