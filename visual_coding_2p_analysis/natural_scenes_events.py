@@ -16,29 +16,41 @@ def do_sweep_mean(x):
 
 def do_sweep_mean_shifted(x):
     return x[30:40].mean()
-    
-class event_analysis(object):
-    def __init__(self, *args, **kwargs):
-        for k,v in kwargs.iteritems():
-            setattr(self, k, v)
+
+# class event_analysis(object):
+#     def __init__(self, *args, **kwargs):
+#         for k,v in kwargs.iteritems():
+#             setattr(self, k, v)
+#         self.session_id = session_id
+#         save_path_head = core.get_save_path()
+#         self.save_path = os.path.join(save_path_head, 'Natural Scenes')
+#         self.l0_events = core.get_L0_events(self.session_id)
+#         self.stim_table, self.numbercells, self.specimen_ids = core.get_stim_table(self.session_id, 'natural_scenes')
+#         self.stim_table_sp,_,_ = core.get_stim_table(self.session_id, 'spontaneous')
+#         self.dxcm = core.get_running_speed(self.session_id)
+#
+# class NaturalScenes(event_analysis):
+#     def __init__(self, *args, **kwargs):
+#       super(NaturalScenes, self).__init__(*args, **kwargs)
+
+
+class NaturalScenes:
+    def __init__(self, session_id):
         self.session_id = session_id
         save_path_head = core.get_save_path()
-        self.save_path = os.path.join(save_path_head, 'Natural Scenes')
+        self.save_path = os.path.join(save_path_head, 'NaturalScenes')
         self.l0_events = core.get_L0_events(self.session_id)
         self.stim_table, self.numbercells, self.specimen_ids = core.get_stim_table(self.session_id, 'natural_scenes')
         self.stim_table_sp,_,_ = core.get_stim_table(self.session_id, 'spontaneous')
         self.dxcm = core.get_running_speed(self.session_id)
-        
-class NaturalScenes(event_analysis):    
-    def __init__(self, *args, **kwargs):
-        super(NaturalScenes, self).__init__(*args, **kwargs)   
+
         self.sweep_events, self.mean_sweep_events, self.sweep_p_values, self.running_speed, self.response_events, self.response_trials = self.get_stimulus_response()
         self.peak = self.get_peak()
         self.save_data()
-        
+
     def get_stimulus_response(self):
         '''calculates the response to each stimulus trial. Calculates the mean response to each stimulus condition.
-        
+
 Parameters
 ----------
 
@@ -47,8 +59,8 @@ Returns
 sweep events: full trial for each trial
 mean sweep events: mean response for each trial
 response events: mean response, s.e.m., and number of responsive trials for each stimulus condition
-response trials:         
-        
+response trials:
+
         '''
         sweep_events = pd.DataFrame(index=self.stim_table.index.values, columns=np.array(range(self.numbercells)).astype(str))
         running_speed = pd.DataFrame(index=self.stim_table.index.values, columns=('running_speed','null'))
@@ -57,7 +69,7 @@ response trials:
                 sweep_events[str(nc)][index] = self.l0_events[nc, int(row.start)-28:int(row.start)+35]
             running_speed.running_speed[index] = self.dxcm[int(row.start):int(row.start)+7].mean()
         mean_sweep_events = sweep_events.applymap(do_sweep_mean_shifted)
-        
+
         #make spontaneous p_values
         shuffled_responses = np.empty((self.numbercells, 10000,10))
         idx = np.random.choice(range(self.stim_table_sp.start, self.stim_table_sp.end), 10000)
@@ -71,18 +83,18 @@ response trials:
             actual_is_less = subset.reshape(len(subset),1) <= null_dist_mat
             p_values = np.mean(actual_is_less, axis=1)
             sweep_p_values[str(nc)] = p_values
-      
+
         response_events = np.empty((119,self.numbercells,3))
         response_trials = np.empty((119,self.numbercells,50))
         response_trials[:] = np.NaN
-               
+
         for im in range(-1,118):
             subset = mean_sweep_events[self.stim_table.frame==im]
             subset_p = sweep_p_values[self.stim_table.frame==im]
             response_events[im+1,:,0] = subset.mean(axis=0)
             response_events[im+1,:,1] = subset.std(axis=0)/np.sqrt(len(subset))
             response_events[im+1,:,2] = subset_p[subset_p<0.05].count().values
-            response_trials[im+1,:,:subset.shape[0]] = subset.values.T        
+            response_trials[im+1,:,:subset.shape[0]] = subset.values.T
         return sweep_events, mean_sweep_events, sweep_p_values, running_speed, response_events, response_trials
 
     def get_image_selectivity(self, nc):
@@ -110,7 +122,7 @@ image seletivity
             rtj[j] = theta.mean()
         biga = rtj.mean()
         return 1 - (2*biga)
-        
+
     def get_reliability(self, pref_image, nc):
         '''computes trial-to-trial reliability of cell at its preferred condition
 
@@ -123,19 +135,19 @@ Returns
 -------
 reliability metric
         '''
-        subset = self.sweep_events[(self.stim_table.frame==pref_image)]         
+        subset = self.sweep_events[(self.stim_table.frame==pref_image)]
         corr_matrix = np.empty((len(subset),len(subset)))
         for i in range(len(subset)):
             for j in range(len(subset)):
                 r,p = st.pearsonr(subset[str(nc)].iloc[i][28:35], subset[str(nc)].iloc[j][28:35])
                 corr_matrix[i,j] = r
-                
+
         inds = np.triu_indices(len(subset), k=1)
         upper = corr_matrix[inds[0],inds[1]]
         return np.nanmean(upper)
-    
+
     def get_running_modulation(self, pref_image, nc):
-        '''computes running modulation of cell at its preferred condition provided there are at 
+        '''computes running modulation of cell at its preferred condition provided there are at
         least 2 trials for both stationary and running conditions
 
 Parameters
@@ -151,7 +163,7 @@ mean response to preferred condition when stationary
         '''
         subset = self.mean_sweep_events[(self.stim_table.frame==pref_image)]
         speed_subset = self.running_speed[(self.stim_table.frame==pref_image)]
-              
+
         subset_run = subset[speed_subset.running_speed>=1]
         subset_stat = subset[speed_subset.running_speed<1]
         if np.logical_and(len(subset_run)>1, len(subset_stat)>1):
@@ -167,7 +179,7 @@ mean response to preferred condition when stationary
             return p, run_mod, run, stat
         else:
             return np.NaN, np.NaN, np.NaN, np.NaN
-    
+
     def get_peak(self):
         '''creates a table of metrics for each cell
 
@@ -192,12 +204,12 @@ peak dataframe
                 peak.responsive_ns.iloc[nc] = False
             peak.image_selectivity_ns.iloc[nc] = self.get_image_selectivity(nc)
             peak.reliability_ns.iloc[nc] = self.get_reliability(pref_image, nc)
-            peak.run_pval_ns.iloc[nc], peak.run_mod_ns.iloc[nc], peak.run_resp_ns.iloc[nc], peak.stat_resp_ns.iloc[nc] = self.get_running_modulation(pref_image, nc)              
+            peak.run_pval_ns.iloc[nc], peak.run_mod_ns.iloc[nc], peak.run_resp_ns.iloc[nc], peak.stat_resp_ns.iloc[nc] = self.get_running_modulation(pref_image, nc)
 
         peak['lifetime_sparseness_ns'] = ((1-(1/118.)*((np.power(self.response_events[:,:,0].sum(axis=0),2))/
-                                  (np.power(self.response_events[:,:,0],2).sum(axis=0))))/(1-(1/118.)))                    
+                                  (np.power(self.response_events[:,:,0],2).sum(axis=0))))/(1-(1/118.)))
         return peak
-    
+
     def save_data(self):
         save_file = os.path.join(self.save_path, str(self.session_id)+"_ns_events_analysis.h5")
         print "Saving data to: ", save_file
@@ -219,7 +231,7 @@ if __name__=='__main__':
 #
 #    session_id = sys.argv[1]
 #    ns = NaturalScenes(session_id=session_id)
-    
+
 #    from allensdk.core.brain_observatory_cache import BrainObservatoryCache
 #    fail=[]
 #    manifest_path = core.get_manifest_path()

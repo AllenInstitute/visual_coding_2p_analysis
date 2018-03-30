@@ -18,27 +18,41 @@ def do_sweep_mean(x):
 def do_intersweep_mean(x):
     return x[:30].mean()
 
-class event_analysis(object):
-    def __init__(self, *args, **kwargs):
-        for k,v in kwargs.iteritems():
-            setattr(self, k, v)
+# class event_analysis(object):
+#     # def __init__(self, *args, **kwargs):
+#     #     for k,v in kwargs.iteritems():
+#     #         setattr(self, k, v)
+#     def _init__(self, session_id):
+#
+#         self.session_id = session_id
+#         save_path_head = core.get_save_path()
+#         self.save_path = os.path.join(save_path_head, 'Drifting Gratings')
+#         self.l0_events = core.get_L0_events(self.session_id)
+#         self.stim_table, self.numbercells, self.specimen_ids = core.get_stim_table(self.session_id, 'drifting_gratings')
+#         self.dxcm = core.get_running_speed(self.session_id)
+#         self.stim_table_sp,_,_ = core.get_stim_table(self.session_id, 'spontaneous')
+
+# class DriftingGratings(event_analysis):
+    # def __init__(self, *args, **kwargs):
+    #     super(DriftingGratings, self).__init__(*args, **kwargs)
+
+class DriftingGratings:
+    def __init__(self, session_id):
+
         self.session_id = session_id
         save_path_head = core.get_save_path()
-        self.save_path = os.path.join(save_path_head, 'Drifting Gratings')
+        self.save_path = os.path.join(save_path_head, 'DriftingGratings')
         self.l0_events = core.get_L0_events(self.session_id)
         self.stim_table, self.numbercells, self.specimen_ids = core.get_stim_table(self.session_id, 'drifting_gratings')
         self.dxcm = core.get_running_speed(self.session_id)
         self.stim_table_sp,_,_ = core.get_stim_table(self.session_id, 'spontaneous')
-        
-class DriftingGratings(event_analysis):    
-    def __init__(self, *args, **kwargs):
-        super(DriftingGratings, self).__init__(*args, **kwargs)                   
+
         self.orivals = range(0,360,45)
         self.tfvals = [0,1,2,4,8,15]
         self.sweep_events, self.mean_sweep_events,self.sweep_p_values, self.running_speed, self.response_events, self.response_trials = self.get_stimulus_response()
         self.peak = self.get_peak()
         self.save_data()
-    
+
     def get_stimulus_response(self):
         '''calculates the response to each stimulus trial. Calculates the mean response to each stimulus condition.
 
@@ -47,8 +61,8 @@ Returns
 sweep events: full trial for each trial
 mean sweep events: mean response for each trial
 response events: mean response, s.e.m., and number of responsive trials for each stimulus condition
-response trials:         
-        
+response trials:
+
         '''
         print "Computing responses"
         #make sweep_response with events
@@ -59,7 +73,7 @@ response trials:
                 sweep_events[str(nc)][ind] = self.l0_events[nc, int(row_stim.start)-30:int(row_stim.start)+60]
             running_speed.running_speed[ind] = self.dxcm[int(row_stim.start):int(row_stim.start)+60].mean()
         mean_sweep_events = sweep_events.applymap(do_sweep_mean)
-        
+
         #make spontaneous p_values
         shuffled_responses = np.empty((self.numbercells, 10000, 60))
         idx = np.random.choice(range(self.stim_table_sp.start, self.stim_table_sp.end), 10000)
@@ -74,17 +88,17 @@ response trials:
             p_values = np.mean(actual_is_less, axis=1)
             sweep_p_values[str(nc)] = p_values
 
-    
+
         #make response array with events
         response_events = np.empty((8,6,self.numbercells,3))
         response_events[:] = np.NaN
-        
+
         blank = mean_sweep_events[np.isnan(self.stim_table.orientation)]
 
         response_trials = np.empty((8,6,self.numbercells,len(blank)))
         response_trials[:] = np.NaN
 
-        
+
         response_events[0,0,:,0] = blank.mean(axis=0)
         response_events[0,0,:,1] = blank.std(axis=0)/np.sqrt(len(blank))
         blank_p = sweep_p_values[np.isnan(self.stim_table.orientation)]
@@ -101,7 +115,7 @@ response trials:
                 response_trials[oi,ti+1,:,:subset.shape[0]] = subset.values.T
 
         return sweep_events, mean_sweep_events, sweep_p_values, running_speed, response_events, response_trials
-    
+
     def get_lifetime_sparseness(self):
         '''computes lifetime sparseness of responses for all cells
 
@@ -111,7 +125,7 @@ lifetime sparseness
         '''
         response = self.response_events[:,1:,:,0].reshape(40, self.numbercells)
         return ((1-(1/40.)*((np.power(response.sum(axis=0),2))/(np.power(response,2).sum(axis=0))))/(1-(1/40.)))
-    
+
     def get_osi(self, pref_tf, nc):
         '''computes orientation and direction selectivity (cv) for cell
 
@@ -151,18 +165,18 @@ Returns
 reliability metric
         '''
         subset = self.sweep_events[(self.stim_table.temporal_frequency==self.tfvals[pref_tf+1])
-                                         &(self.stim_table.orientation==self.orivals[pref_ori])]         
+                                         &(self.stim_table.orientation==self.orivals[pref_ori])]
         corr_matrix = np.empty((len(subset),len(subset)))
         for i in range(len(subset)):
             for j in range(len(subset)):
                 r,p = st.pearsonr(subset[str(nc)].iloc[i][30:], subset[str(nc)].iloc[j][30:])
                 corr_matrix[i,j] = r
-                
+
         inds = np.triu_indices(len(subset), k=1)
         upper = corr_matrix[inds[0],inds[1]]
         return np.nanmean(upper)
                     #TODO: why are some reliability values NaN?
-    
+
     def get_tfdi(self, pref_ori, nc):
         '''computes temporal frequency discrimination index for cell
 
@@ -204,11 +218,11 @@ high cutoff tf from the curve fit
         if pref_tf in range(1,4):
             try:
                 popt, pcov = curve_fit(core.gauss_function, range(5), tf_tuning, p0=[np.amax(tf_tuning), pref_tf, 1.], maxfev=2000)
-                tf_prediction = core.gauss_function(np.arange(0., 4.1, 0.1), *popt)             
+                tf_prediction = core.gauss_function(np.arange(0., 4.1, 0.1), *popt)
                 fit_tf_ind = popt[1]
                 fit_tf = np.power(2,popt[1])
                 low_cut_ind = np.abs(tf_prediction-(tf_prediction.max()/2.))[:tf_prediction.argmax()].argmin()
-                high_cut_ind = np.abs(tf_prediction-(tf_prediction.max()/2.))[tf_prediction.argmax():].argmin()+tf_prediction.argmax()                         
+                high_cut_ind = np.abs(tf_prediction-(tf_prediction.max()/2.))[tf_prediction.argmax():].argmin()+tf_prediction.argmax()
                 if low_cut_ind>0:
                     low_cutoff = np.arange(0, 4.1, 0.1)[low_cut_ind]
                     tf_low_cutoff = np.power(2,low_cutoff)
@@ -216,7 +230,7 @@ high cutoff tf from the curve fit
                     high_cutoff = np.arange(0, 4.1, 0.1)[high_cut_ind]
                     tf_high_cutoff = np.power(2,high_cutoff)
             except:
-                pass 
+                pass
         else:
             fit_tf_ind = pref_tf
             fit_tf = self.tfvals[pref_tf+1]
@@ -230,13 +244,13 @@ high cutoff tf from the curve fit
                 else:
                     low_cut_ind = np.abs(tf_prediction-(tf_prediction.max()/2.))[:tf_prediction.argmax()].argmin()
                     low_cutoff = np.arange(0, 4.1, 0.1)[low_cut_ind]
-                    tf_low_cutoff = np.power(2,low_cutoff)                
+                    tf_low_cutoff = np.power(2,low_cutoff)
             except:
                 pass
         return fit_tf_ind, fit_tf, tf_low_cutoff, tf_high_cutoff
 
     def get_running_modulation(self, pref_ori, pref_tf, nc):
-        '''computes running modulation of cell at its preferred condition provided there are at 
+        '''computes running modulation of cell at its preferred condition provided there are at
         least 2 trials for both stationary and running conditions
 
 Parameters
@@ -290,8 +304,8 @@ peak - all
         peak_blank = peak - blank
         all_blank = all_resp - blank
         return peak_blank, all_blank
-        
-    
+
+
     def get_peak(self):
         '''creates a table of metrics for each cell
 
@@ -301,10 +315,10 @@ peak dataframe
         '''
         print "Computing metrics"
         peak = pd.DataFrame(columns=('cell_specimen_id','pref_ori_dg','pref_tf_dg','num_pref_trials_dg','responsive_dg',
-                                     'g_osi_dg','g_dsi_dg','tfdi_dg','reliability_dg','lifetime_sparseness_dg', 
+                                     'g_osi_dg','g_dsi_dg','tfdi_dg','reliability_dg','lifetime_sparseness_dg',
                                      'fit_tf_dg','fit_tf_ind_dg','tf_low_cutoff_dg','tf_high_cutoff_dg','run_pval_dg',
                                      'run_resp_dg','stat_resp_dg','run_mod_dg', 'peak_blank_dg','all_blank_dg'), index=range(self.numbercells))
-        
+
         peak['lifetime_sparseness_dg'] = self.get_lifetime_sparseness()
         for nc in range(self.numbercells):
             pref_ori = np.where(self.response_events[:,1:,nc,0]==self.response_events[:,1:,nc,0].max())[0][0]
@@ -312,7 +326,7 @@ peak dataframe
             peak.cell_specimen_id.iloc[nc] = self.specimen_ids[nc]
             peak.pref_ori_dg.iloc[nc] = self.orivals[pref_ori]
             peak.pref_tf_dg.iloc[nc] = self.tfvals[pref_tf+1]
-    
+
             #responsive
             peak.num_pref_trials_dg.iloc[nc] = self.response_events[pref_ori, pref_tf+1, nc, 2]
             if self.response_events[pref_ori, pref_tf+1, nc, 2]>3:
@@ -326,9 +340,9 @@ peak dataframe
             peak.peak_blank_dg.iloc[nc], peak.all_blank_dg.iloc[nc] = self.get_suppressed_contrast(pref_ori, pref_tf, nc)
             if self.response_events[pref_ori, pref_tf+1,nc,2]>3:
                 peak.fit_tf_ind_dg.iloc[nc], peak.fit_tf_dg.iloc[nc], peak.tf_low_cutoff_dg.iloc[nc], peak.tf_high_cutoff_dg.iloc[nc] = self.fit_tf_tuning(pref_ori, pref_tf, nc)
-            
+
         return peak
-    
+
     def save_data(self):
         save_file = os.path.join(self.save_path, str(self.session_id)+"_dg_events_analysis.h5")
         print "Saving data to: ", save_file
@@ -348,7 +362,7 @@ peak dataframe
 if __name__=='__main__':
 #    session_id = 527745328#511595995
 #    dg = DriftingGratings(session_id=session_id)
-    
+
     from allensdk.core.brain_observatory_cache import BrainObservatoryCache
     fail=[]
     manifest_path = core.get_manifest_path()

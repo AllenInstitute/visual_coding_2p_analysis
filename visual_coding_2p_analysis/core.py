@@ -21,10 +21,19 @@ Returns
 save_path
         '''
 
-    if sys.platform=='win32':
-        save_path = r'\\allen\programs\braintv\workgroups\nc-ophys\Saskia\Visual Coding Event Analysis'
-    elif sys.paltform=='darwin':
-        save_path = r'/Volumes/programs/braintv/workgroups/nc-ophys/Saskia/Visual Coding Event Analysis'
+    # if sys.platform=='win32':
+    #     save_path = r'\\allen\programs\braintv\workgroups\nc-ophys\Saskia\Visual Coding Event Analysis'
+    # elif sys.platform=='darwin':
+    #     save_path = r'/Volumes/programs/braintv/workgroups/nc-ophys/Saskia/Visual Coding Event Analysis'
+    # elif sys.platform=='linux2':
+    #     save_path = r'/allen/programs/braintv/workgroups/nc-ophys/Saskia/Visual Coding Event Analysis'
+
+    if sys.platform == 'win32':
+        save_path = r'\\allen\programs\braintv\workgroups\nc-ophys\ObservatoryPlatformPaperAnalysis\analysis_files_pre_2018_3_29'
+    elif sys.platform == 'darwin':
+        save_path = r'/Volumes/programs/braintv/workgroups/nc-ophys/ObservatoryPlatformPaperAnalysis/analysis_files_pre_2018_3_29'
+    elif sys.platform == 'linux2':
+        save_path = '/allen/programs/braintv/workgroups/nc-ophys/ObservatoryPlatformPaperAnalysis/analysis_files_pre_2018_3_29'
     return save_path
 
 
@@ -54,13 +63,13 @@ specimen IDs
 def get_L0_events(session_id):
     '''gets the L0 event time series for a given session
 
-Parameters
-----------
-session_id (int)
+    Parameters
+    ----------
+    session_id (int)
 
-Returns
--------
-l0 event traces (numpy array)
+    Returns
+    -------
+    l0 event traces (numpy array)
         '''
 
     # event_path = get_event_path()
@@ -69,15 +78,15 @@ l0 event traces (numpy array)
     # events = np.load(event_file)['ev']
     # return events
 
-   print "Loading L0 events for: ", str(session_id)
-   manifest_path = get_manifest_path()
-   from allensdk.core.brain_observatory_cache import BrainObservatoryCache
-   boc = BrainObservatoryCache(manifest_file=manifest_path)
-   data_set = boc.get_ophys_experiment_data(session_id)
-   from l0_analysis import L0_analysis
-   l0 = L0_analysis(data_set)
-   events = l0.get_events()
-   return events
+    print("Loading L0 events for: " + str(session_id))
+    manifest_path = get_manifest_path()
+    from allensdk.core.brain_observatory_cache import BrainObservatoryCache
+    boc = BrainObservatoryCache(manifest_file=manifest_path)
+    data_set = boc.get_ophys_experiment_data(session_id)
+    from l0_analysis import L0_analysis
+    l0 = L0_analysis(data_set)
+    events = l0.get_events()
+    return events
 
 
 def get_manifest_path():
@@ -88,9 +97,12 @@ Returns
 manifest path
         '''
     if sys.platform=='win32':
-        manifest_path = r"\\allen\aibs\technology\allensdk_data\platform_boc_pre_2018_3_16\manifest.json"
+        manifest_path = r"\\allen\programs\braintv\workgroups\nc-ophys\ObservatoryPlatformPaperAnalysis\platform_boc_pre_2018_3_16\manifest.json"
     elif sys.platform=='darwin':
-        manifest_path = r"/Volumes/aibs/technology/allensdk_data/platform_boc_pre_2018_3_16/manifest.json"
+        manifest_path = r"/Volumes/programs/braintv/workgroups/nc-ophys/ObservatoryPlatformPaperAnalysis/platform_boc_pre_2018_3_16/manifest.json"
+    elif sys.platform=='linux2':
+        manifest_path = r"/allen/programs/braintv/workgroups/nc-ophys/ObservatoryPlatformPaperAnalysis/platform_boc_pre_2018_3_16/manifest.json"
+
 
     return manifest_path
 
@@ -102,14 +114,16 @@ Returns
 cache path
         '''
     if sys.platform=='win32':
-        cache_path = r'\\allen\aibs\technology\allensdk_data\platform_events_pre_2018_3_19'
+        cache_path = r"\\allen\programs\braintv\workgroups\nc-ophys\ObservatoryPlatformPaperAnalysis\events_pre_2018_3_29"
     elif sys.platform=='darwin':
-        cache_path = r'/Volumes/aibs/technology/allensdk_data/platform_events_pre_2018_3_19/'
+        cache_path = r'/Volumes/programs/braintv/workgroups/nc-ophys/ObservatoryPlatformPaperAnalysis/events_pre_2018_3_29/'
+    elif sys.platform=='linux2':
+        cache_path = r'/allen/programs/braintv/workgroups/nc-ophys/ObservatoryPlatformPaperAnalysis/events_pre_2018_3_29/'
     return cache_path
 
 def get_event_path():
     '''returns the path for the L0 event files
-
+This should be deprecated now. The l0_analysis module doesn't use hash anymore, so no need to use this path.
 Returns
 -------
 event path
@@ -118,6 +132,8 @@ event path
         event_path = r'\\allen\aibs\technology\allensdk_data\platform_events_pre_2018_3_19\events_2'
     elif sys.platform=='darwin':
         event_path = r'/Volumes/aibs/technology/allensdk_data/platform_events_pre_2018_3_19/events_2'
+    elif sys.platform=='linux2':
+        event_path = r'/allen/aibs/technology/allensdk_data/platform_events_pre_2018_3_19/events_2'
     return event_path
 
 def get_running_speed(session_id):

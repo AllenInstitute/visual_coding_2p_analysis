@@ -18,28 +18,40 @@ def do_sweep_mean(x):
 def do_sweep_mean_shifted(x):
     return x[30:40].mean()
 
-class event_analysis(object):
-    def __init__(self, *args, **kwargs):
-        for k,v in kwargs.iteritems():
-            setattr(self, k, v)
+# class event_analysis(object):
+#     def __init__(self, *args, **kwargs):
+#         for k,v in kwargs.iteritems():
+#             setattr(self, k, v)
+#         self.session_id = session_id
+#         save_path_head = core.get_save_path()
+#         self.save_path = os.path.join(save_path_head, 'Static Gratings')
+#         self.l0_events = core.get_L0_events(self.session_id)
+#         self.stim_table, self.numbercells, self.specimen_ids = core.get_stim_table(self.session_id, 'static_gratings')
+#         self.stim_table_sp,_,_ = core.get_stim_table(self.session_id, 'spontaneous')
+#         self.dxcm = core.get_running_speed(self.session_id)
+
+# class StaticGratings(event_analysis):
+#     def __init__(self, *args, **kwargs):
+#         super(StaticGratings, self).__init__(*args, **kwargs)
+
+class StaticGratings:
+    def __init__(self, session_id):
+
         self.session_id = session_id
         save_path_head = core.get_save_path()
-        self.save_path = os.path.join(save_path_head, 'Static Gratings')
+        self.save_path = os.path.join(save_path_head, 'StaticGratings')
         self.l0_events = core.get_L0_events(self.session_id)
         self.stim_table, self.numbercells, self.specimen_ids = core.get_stim_table(self.session_id, 'static_gratings')
-        self.stim_table_sp,_,_ = core.get_stim_table(self.session_id, 'spontaneous')
+        self.stim_table_sp, _, _ = core.get_stim_table(self.session_id, 'spontaneous')
         self.dxcm = core.get_running_speed(self.session_id)
-        
-class StaticGratings(event_analysis):    
-    def __init__(self, *args, **kwargs):
-        super(StaticGratings, self).__init__(*args, **kwargs)                   
+
         self.orivals = range(0,180,30)
         self.sfvals = [0,0.02,0.04,0.08,0.16,0.32]
         self.phasevals = [0,0.25,0.5,0.75]
         self.sweep_events, self.mean_sweep_events, self.sweep_p_values, self.running_speed, self.response_events, self.response_trials = self.get_stimulus_response()
         self.peak = self.get_peak()
         self.save_data()
-    
+
     def get_stimulus_response(self):
         '''calculates the response to each stimulus trial. Calculates the mean response to each stimulus condition.
 
@@ -48,8 +60,8 @@ Returns
 sweep events: full trial for each trial
 mean sweep events: mean response for each trial
 response events: mean response, s.e.m., and number of responsive trials for each stimulus condition
-response trials:         
-        
+response trials:
+
         '''
         sweep_events = pd.DataFrame(index=self.stim_table.index.values, columns=np.array(range(self.numbercells)).astype(str))
         running_speed = pd.DataFrame(index=self.stim_table.index.values, columns=('running_speed','null'))
@@ -58,8 +70,8 @@ response trials:
                 sweep_events[str(nc)][index] = self.l0_events[nc, int(row.start)-28:int(row.start)+35]
             running_speed.running_speed[index] = self.dxcm[int(row.start):int(row.start)+7].mean()
 
-        mean_sweep_events = sweep_events.applymap(do_sweep_mean_shifted) 
-        
+        mean_sweep_events = sweep_events.applymap(do_sweep_mean_shifted)
+
         #make spontaneous p_values
         shuffled_responses = np.empty((self.numbercells, 10000,10))
         idx = np.random.choice(range(self.stim_table_sp.start, self.stim_table_sp.end), 10000)
@@ -73,7 +85,7 @@ response trials:
             actual_is_less = subset.reshape(len(subset),1) <= null_dist_mat
             p_values = np.mean(actual_is_less, axis=1)
             sweep_p_values[str(nc)] = p_values
-                
+
         response_events = np.empty((6,6,4,self.numbercells,3))
         response_trials = np.empty((6,6,4,self.numbercells,50))
         response_trials[:] = np.NaN
@@ -86,7 +98,7 @@ response trials:
                     response_events[oi,si+1,phi,:,1] = subset.std(axis=0)/np.sqrt(len(subset))
 #                    response_events[oi,si+1,phi,:,2] = subset[subset>0].count().values
                     response_events[oi,si+1,phi,:,2] = subset_p[subset_p<0.05].count().values
-                    response_trials[oi,si+1,phi,:,:subset.shape[0]] = subset.values.T        
+                    response_trials[oi,si+1,phi,:,:subset.shape[0]] = subset.values.T
         subset = mean_sweep_events[np.isnan(self.stim_table.orientation)]
         subset_p = sweep_p_values[np.isnan(self.stim_table.orientation)]
         response_events[0,0,0,:,0] = subset.mean(axis=0)
@@ -103,7 +115,7 @@ lifetime sparseness
         '''
         response = self.response_events[:,1:,:,:,0].reshape(120, self.numbercells)
         return ((1-(1/120.)*((np.power(response.sum(axis=0),2))/(np.power(response,2).sum(axis=0))))/(1-(1/120.)))
-    
+
     def get_osi(self, pref_sf, pref_phase, nc):
         '''computes orientation selectivity (cv) for cell
 
@@ -123,7 +135,7 @@ orientation selectivity
         for i in range(6):
             CV_top_os[i] = (tuning[i]*np.exp(1j*2*orivals_rad[i]))
         return np.abs(CV_top_os.sum())/tuning.sum()
-    
+
     def get_reliability(self, pref_ori, pref_sf, pref_phase, nc):
         '''computes trial-to-trial reliability of cell at its preferred condition
 
@@ -140,17 +152,17 @@ reliability metric
         '''
         subset = self.sweep_events[(self.stim_table.spatial_frequency==self.sfvals[pref_sf])
                                      &(self.stim_table.orientation==self.orivals[pref_ori])
-                                     &(self.stim_table.phase==self.phasevals[pref_phase])]         
+                                     &(self.stim_table.phase==self.phasevals[pref_phase])]
         corr_matrix = np.empty((len(subset),len(subset)))
         for i in range(len(subset)):
             for j in range(len(subset)):
                 r,p = st.pearsonr(subset[str(nc)].iloc[i][28:35], subset[str(nc)].iloc[j][28:35])
                 corr_matrix[i,j] = r
-                
+
         inds = np.triu_indices(len(subset), k=1)
         upper = corr_matrix[inds[0],inds[1]]
         return np.nanmean(upper)
-        
+
     def get_sfdi(self, pref_ori, pref_phase, nc):
         '''computes spatial frequency discrimination index for cell
 
@@ -198,7 +210,7 @@ high cutoff sf from the curve fit
                 fit_sf_ind = popt[1]
                 fit_sf = 0.02*np.power(2,popt[1])
                 low_cut_ind = np.abs(sf_prediction-(sf_prediction.max()/2.))[:sf_prediction.argmax()].argmin()
-                high_cut_ind = np.abs(sf_prediction-(sf_prediction.max()/2.))[sf_prediction.argmax():].argmin()+sf_prediction.argmax()                         
+                high_cut_ind = np.abs(sf_prediction-(sf_prediction.max()/2.))[sf_prediction.argmax():].argmin()+sf_prediction.argmax()
                 if low_cut_ind>0:
                     low_cutoff = np.arange(0, 4.1, 0.1)[low_cut_ind]
                     sf_low_cutoff = 0.02*np.power(2, low_cutoff)
@@ -206,7 +218,7 @@ high cutoff sf from the curve fit
                     high_cutoff = np.arange(0, 4.1, 0.1)[high_cut_ind]
                     sf_high_cutoff = 0.02*np.power(2, high_cutoff)
             except:
-                pass 
+                pass
         else:
             fit_sf_ind = pref_sf
             fit_sf = self.sfvals[pref_sf+1]
@@ -220,13 +232,13 @@ high cutoff sf from the curve fit
                 else:
                     low_cut_ind = np.abs(sf_prediction-(sf_prediction.max()/2.))[:sf_prediction.argmax()].argmin()
                     low_cutoff = np.arange(0, 4.1, 0.1)[low_cut_ind]
-                    sf_low_cutoff = 0.02*np.power(2, low_cutoff)                
+                    sf_low_cutoff = 0.02*np.power(2, low_cutoff)
             except:
                 pass
         return fit_sf_ind, fit_sf, sf_low_cutoff, sf_high_cutoff
-    
+
     def get_running_modulation(self, pref_ori, pref_sf, pref_phase, nc):
-        '''computes running modulation of cell at its preferred condition provided there are at 
+        '''computes running modulation of cell at its preferred condition provided there are at
         least 2 trials for both stationary and running conditions
 
 Parameters
@@ -244,11 +256,11 @@ mean response to preferred condition when stationary
         '''
         subset = self.mean_sweep_events[(self.stim_table.spatial_frequency==self.sfvals[pref_sf])
                                      &(self.stim_table.orientation==self.orivals[pref_ori])
-                                     &(self.stim_table.phase==self.phasevals[pref_phase])]   
+                                     &(self.stim_table.phase==self.phasevals[pref_phase])]
         speed_subset = self.running_speed[(self.stim_table.spatial_frequency==self.sfvals[pref_sf])
                                      &(self.stim_table.orientation==self.orivals[pref_ori])
-                                     &(self.stim_table.phase==self.phasevals[pref_phase])]   
-        
+                                     &(self.stim_table.phase==self.phasevals[pref_phase])]
+
         subset_run = subset[speed_subset.running_speed>=1]
         subset_stat = subset[speed_subset.running_speed<1]
         if np.logical_and(len(subset_run)>1, len(subset_stat)>1):
@@ -275,7 +287,7 @@ peak dataframe
         peak = pd.DataFrame(columns=('cell_specimen_id','pref_ori_sg','pref_sf_sg','pref_phase_sg','num_pref_trials_sg',
                                      'responsive_sg','g_osi_sg','sfdi_sg','reliability_sg','lifetime_sparseness_sg', 'fit_sf_sg','fit_sf_ind_sg',
                                      'sf_low_cutoff_sg','sf_high_cutoff_sg', 'run_pval_sg','run_mod_sg','run_resp_sg','stat_resp_sg'), index=range(self.numbercells))
-        
+
         peak['lifetime_sparseness_sg'] = self.get_lifetime_sparseness()
         for nc in range(self.numbercells):
             pref_ori = np.where(self.response_events[:,1:,:,nc,0]==self.response_events[:,1:,:,nc,0].max())[0][0]
@@ -290,16 +302,16 @@ peak dataframe
                 peak.responsive_sg.iloc[nc] = True
             else:
                 peak.responsive_sg.iloc[nc] = False
-            
-            peak.g_osi_sg.iloc[nc] = self.get_osi(pref_sf, pref_phase, nc)            
+
+            peak.g_osi_sg.iloc[nc] = self.get_osi(pref_sf, pref_phase, nc)
             peak.reliability_sg.iloc[nc] = self.get_reliability(pref_ori, pref_sf, pref_phase, nc)
             peak.sfdi_sg.iloc[nc] = self.get_sfdi(pref_ori, pref_phase, nc)
-            peak.run_pval_sg.iloc[nc], peak.run_mod_sg.iloc[nc], peak.run_resp_sg.iloc[nc], peak.stat_resp_sg.iloc[nc] = self.get_running_modulation(pref_ori, pref_sf, pref_phase, nc)              
+            peak.run_pval_sg.iloc[nc], peak.run_mod_sg.iloc[nc], peak.run_resp_sg.iloc[nc], peak.stat_resp_sg.iloc[nc] = self.get_running_modulation(pref_ori, pref_sf, pref_phase, nc)
             #SF fit only for responsive cells
             if self.response_events[pref_ori, pref_sf+1,pref_phase,nc,2]>11:
                 peak.fit_sf_ind_sg.iloc[nc], peak.fit_sf_sg.iloc[nc], peak.sf_low_cutoff_sg.iloc[nc], peak.sf_high_cutoff_sg.iloc[nc] = self.fit_sf_tuning(pref_ori, pref_sf, pref_phase, nc)
         return peak
-    
+
     def save_data(self):
         save_file = os.path.join(self.save_path, str(self.session_id)+"_sg_events_analysis.h5")
         print "Saving data to: ", save_file
@@ -314,7 +326,7 @@ peak dataframe
         dset = f.create_dataset('response_events', data=self.response_events)
         dset1 = f.create_dataset('response_trials', data=self.response_trials)
         f.close()
-        
+
 if __name__=='__main__':
     session_id = 511458874
     sg = StaticGratings(session_id=session_id)

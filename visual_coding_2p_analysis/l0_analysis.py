@@ -8,6 +8,7 @@ from allensdk.core.brain_observatory_cache import BrainObservatoryCache
 import cPickle as pickle
 import warnings
 import os
+import pandas as pd
 
 # l0 = fast.arfpop
 medfilt = lambda x, s: median_filter(x, s, mode='constant')
@@ -48,10 +49,10 @@ class L0_analysis:
 
     """
     def __init__(self, dataset,
-                       manifest_file='/allen/aibs/technology/allensdk_data/platform_boc_pre_2018_3_16/manifest_file.json',
+                       manifest_file='/allen/programs/braintv/workgroups/nc-ophys/ObservatoryPlatformPaperAnalysis/platform_boc_pre_2018_3_16/manifest.json',
                        event_min_size=2., noise_scale=.1, median_filter_1=5401, median_filter_2=101, halflife_ms=None,
                        sample_rate_hz=30, genotype='Unknown', L0_constrain=False,
-                       cache_directory='/allen/aibs/technology/allensdk_data/platform_events_pre_2018_3_19/', use_cache=True):
+                       cache_directory='/allen/programs/braintv/workgroups/nc-ophys/ObservatoryPlatformPaperAnalysis/events_pre_2018_3_29/', use_cache=True, use_bisection=True):
 
 
         if type(dataset) is int:
@@ -69,7 +70,7 @@ class L0_analysis:
             self.metadata = {'genotype':genotype, 'ophys_experiment_id':999}
             self.corrected_fluorescence_traces = dataset
 
-
+        self.num_cells = self.corrected_fluorescence_traces.shape[0]
         self.sample_rate_hz = sample_rate_hz
         self.event_min_size = event_min_size
         self.noise_scale = noise_scale
@@ -80,6 +81,7 @@ class L0_analysis:
             self.halflife = halflife_ms
 
         self.use_cache = use_cache
+        self.use_bisection = use_bisection
         self.median_filter_1 = median_filter_1
         self.median_filter_2 = median_filter_2
         self.L0_constrain = L0_constrain
@@ -91,7 +93,6 @@ class L0_analysis:
         self._fit_params = None
 
         self._gamma = None
-
         self.lambdas = []
         self.l0_func = None
 
@@ -104,24 +105,46 @@ class L0_analysis:
         return self.l0_func
 
     @property
+    def trace_info_file(self):
+        return os.path.join(self.cache_directory, 'event_info_dictionary.h5')
+
+    @property
     def evfile(self):
+        # return os.path.join(self.cache_directory, str(self.metadata['ophys_experiment_id']) +  '_' +
+        #                                           str(hash(str(self.event_min_size) +
+        #                                           str(self.noise_scale) +
+        #                                           str(self.median_filter_1) +
+        #                                           str(self.median_filter_2) +
+        #                                           str(self.halflife) +
+        #                                           str(self.sample_rate_hz) +
+        #                                           str(self.L0_constrain) +
+        #                                           str(self.use_bisection))) + '_events.npz')
+
         return os.path.join(self.cache_directory, str(self.metadata['ophys_experiment_id']) +  '_' +
-                                                  str(hash(str(self.event_min_size) +
-                                                  str(self.noise_scale) +
-                                                  str(self.median_filter_1) +
-                                                  str(self.median_filter_2) +
-                                                  str(self.halflife) +
-                                                  str(self.sample_rate_hz) +
-                                                  str(self.L0_constrain))) + '_events.npz')
+                                                  str(self.event_min_size) + '_' +
+                                                  str(self.noise_scale) + '_' +
+                                                  str(self.median_filter_1) + '_' +
+                                                  str(self.median_filter_2) + '_' +
+                                                  str(self.halflife) + '_' +
+                                                  str(self.sample_rate_hz) + '_' +
+                                                  str(self.L0_constrain) + '_' +
+                                                  str(self.use_bisection) + '_events.npz')
 
     @property
     def dff_file(self):
-        return os.path.join(self.cache_directory, str(self.metadata['ophys_experiment_id']) +  '_' +
-                                                  str(hash(str(self.noise_scale) +
-                                                  str(self.median_filter_1) +
-                                                  str(self.median_filter_2) +
-                                                  str(self.halflife) +
-                                                  str(self.sample_rate_hz))) + '_dff.npz')
+        # return os.path.join(self.cache_directory, str(self.metadata['ophys_experiment_id']) +  '_' +
+        #                                           str(hash(str(self.noise_scale) +
+        #                                           str(self.median_filter_1) +
+        #                                           str(self.median_filter_2) +
+        #                                           str(self.halflife) +
+        #                                           str(self.sample_rate_hz))) + '_dff.npz')
+
+        return os.path.join(self.cache_directory, str(self.metadata['ophys_experiment_id']) + '_' +
+                                                  str(self.noise_scale) + '_' +
+                                                  str(self.median_filter_1) + '_' +
+                                                  str(self.median_filter_2) + '_' +
+                                                  str(self.halflife) + '_' +
+                                                  str(self.sample_rate_hz) + '_dff.npz')
 
     @property
     def dff_traces(self):
@@ -162,8 +185,10 @@ class L0_analysis:
             self._noise_stds = noise_stds
             self._num_small_baseline_frames = num_small_baseline_frames
 
-            if self.use_cache: np.savez(self.dff_file, dff=dff_traces, noise_stds=noise_stds, num_small_baseline_frames=np.array(num_small_baseline_frames))
+            if self.use_cache: np.savez(self.dff_file, dff=dff_traces, noise_stds=np.array(noise_stds), num_small_baseline_frames=np.array(num_small_baseline_frames))
             self.print('done!')
+
+        self.min_detected_event_sizes = [[] for n in range(self._dff_traces.shape[0])]
         return self._dff_traces, self._noise_stds, self._num_small_baseline_frames
 
 
@@ -214,9 +239,12 @@ class L0_analysis:
         return 1.4826*MAD
 
 
-    def get_events(self, event_min_size=None):
+    def get_events(self, event_min_size=None, use_bisection=None):
         if event_min_size is not None:
             self.event_min_size = event_min_size
+
+        if use_bisection is not None:
+            self.use_bisection = use_bisection
 
         if os.path.isfile(self.evfile) and self.use_cache:
             events = np.load(self.evfile)['ev']
@@ -225,24 +253,122 @@ class L0_analysis:
             self.print('Calculating events in progress', flush=True)
 
             events = []
-            for n, dff in enumerate(self.dff_traces[0]):
-                dff *= self.noise_scale / self.dff_traces[1][n]
 
+
+            for n, dff in enumerate(self.dff_traces[0]):
                 if any(np.isnan(dff)):
                     tmp = np.NaN*np.zeros(dff.shape)
                     self._lambdas.append(np.NaN)
                 else:
                     tmp = dff[:]
 
-                    (tmp, l) = self.bracket(tmp, self.noise_scale, 0, self.noise_scale, .0001, self.event_min_size)
+                    if self.use_bisection:
+                        (tmp, l) = self.bisection(tmp, self.dff_traces[1][n], self.event_min_size)
+                    else:
+                        (tmp, l) = self.bracket(tmp, self.dff_traces[1][n], 0, 10*self.noise_scale, .0001, self.event_min_size)
 
-                    events.append(tmp * self.dff_traces[1][n] / self.noise_scale)
+
+                    events.append(tmp)
                     self.lambdas.append(l)
                 self.print('.', end='', flush=True)
             events = np.array(events)
-            if self.use_cache: np.savez(self.evfile, ev=events)
+            if self.use_cache:
+                np.savez(self.evfile, ev=events)
+
+                store = pd.HDFStore(self.trace_info_file)
+                for n in range(events.shape[0]):
+
+                    nz_tmp = (events[n] > 0)
+                    small_event_ind = (events[n][nz_tmp] < self.dff_traces[1][n] * self.event_min_size)
+
+                    trace_info = pd.DataFrame(columns=('ophys_experiment_id', 'cell_index'
+                    'num_small_baseline_frames', 'num_small_events', 'num_events', 'total_small_event_weight',
+                    'total_event_weight'), index=range(events.shape[0]))
+
+                    trace_info['ophys_experiment_id'] = self.metadata['ophys_experiment_id']
+                    trace_info['cell_index'] = n
+                    trace_info['num_small_baseline_frames'] = self.dff_traces[2][n]
+                    trace_info['num_small_events'] = np.sum(small_event_ind)
+                    trace_info['num_events'] = np.sum(nz_tmp)
+                    trace_info['total_small_event_weight'] = np.sum(events[n][small_event_ind])
+                    trace_info['total_event_weight'] = np.sum(events[n][nz_tmp])
+
+                    store.append(trace_info)
+                    store.close()
+
             self.print('done!')
         return np.array(events)
+
+
+    def bisection(self, dff, n, event_min_size, left=0., right=1., max_its=100, eps=.0001):
+
+        # find right endpoint with no events
+        tmp_right = self.l0(dff, self.gamma, right, self.L0_constrain)['pos_spike_mag']
+        nz_right = (tmp_right > 0)
+
+        it = 0
+        while it <= 20:
+            it += 1
+
+            if np.sum(nz_right) > 0:
+                right *= 2
+                tmp_right = self.l0(dff, self.gamma, right, self.L0_constrain)['pos_spike_mag']
+                nz_right = (tmp_right > 0)
+            else:
+                break
+
+        # bisection for lambda minimizing num events < min size
+        it = 0
+        while it <= max_its:
+
+            it += 1
+            if (right - left) < eps:
+                break
+
+            mid = left + (right - left) / 2.
+
+            tmp_left = self.l0(dff, self.gamma, left, self.L0_constrain)['pos_spike_mag']
+            nz_left = (tmp_left > 0)
+            num_small_events_left = np.sum(tmp_left[nz_left] < n*event_min_size)
+
+            if num_small_events_left == 0:
+                break
+            else:
+                tmp_mid = self.l0(dff, self.gamma, mid, self.L0_constrain)['pos_spike_mag']
+                tmp_right = self.l0(dff, self.gamma, right, self.L0_constrain)['pos_spike_mag']
+
+                nz_mid = (tmp_mid > 0)
+                nz_right = (tmp_right > 0)
+
+                if np.sum(nz_mid) > 0:
+                    num_small_events_mid = np.sum(tmp_mid[nz_mid] < n*event_min_size)
+                else:
+                    num_small_events_mid = -np.infty
+
+                if np.sum(nz_right) > 0:
+                    num_small_events_right = np.sum(tmp_right[nz_right] < n*event_min_size)
+                else:
+                    num_small_events_right = -np.infty
+
+                print('lambda_left: ' + str(left))
+                print('lambda_mid: ' + str(mid))
+                print('lambda_right: ' + str(right))
+
+                print('num events_left: ' + str(num_small_events_left))
+                print('num events_mid: ' + str(num_small_events_mid))
+                print('num events_right: ' + str(num_small_events_right))
+
+                if np.sign(num_small_events_mid) == np.sign(num_small_events_left):
+                    left = mid
+                else:
+                    right = mid
+
+            # else:
+            #     print('no events at left point')
+            #     left = max(0, left - (mid-left))
+
+        return tmp_left, left
+
 
     def bracket(self, dff, n, s1, step, step_min, event_min_size, bisect=False):
         l = s1 + step
