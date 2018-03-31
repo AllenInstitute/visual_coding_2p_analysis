@@ -11,4 +11,5 @@ Contributors
 ------------
 
 * Saskia de Vries <saskiad@alleninstitute.org>
+* Michael Buice <michaelbu@alleninstitute.org>
 * Gabe Ocker <gabeo@alleninstitute.org>
