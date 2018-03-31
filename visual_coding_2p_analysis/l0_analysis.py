@@ -294,7 +294,7 @@ class L0_analysis:
                     trace_info['total_small_event_weight'] = np.sum(tmp_nz[small_event_ind])
                     trace_info['total_event_weight'] = np.sum(tmp_nz)
 
-                    store.append(trace_info)
+                    store.append(key=str(self.metadata['ophys_experiment_id'])+'_'+str(n), value=trace_info)
                     store.close()
 
             self.print('done!')
