@@ -276,6 +276,7 @@ class L0_analysis:
                 np.savez(self.evfile, ev=events)
 
                 store = pd.HDFStore(self.trace_info_file)
+
                 for n in range(events.shape[0]):
 
                     nz_ind = (events[n] > 0)
@@ -295,7 +296,7 @@ class L0_analysis:
                     trace_info['total_event_weight'] = np.sum(tmp_nz)
 
                     store.append(key=str(self.metadata['ophys_experiment_id'])+'_'+str(n), value=trace_info)
-                    store.close()
+                store.close()
 
             self.print('done!')
         return np.array(events)
