@@ -275,29 +275,6 @@ class L0_analysis:
             if self.use_cache:
                 np.savez(self.evfile, ev=events)
 
-                store = pd.HDFStore(self.trace_info_file)
-
-                for n in range(events.shape[0]):
-
-                    nz_ind = (events[n] > 0)
-                    tmp_nz = events[n][nz_ind]
-                    small_event_ind = (tmp_nz < self.dff_traces[1][n] * self.event_min_size)
-
-                    trace_info = pd.DataFrame(columns=('ophys_experiment_id', 'cell_index'
-                    'num_small_baseline_frames', 'num_small_events', 'num_events', 'total_small_event_weight',
-                    'total_event_weight'), index=range(events.shape[0]))
-
-                    trace_info['ophys_experiment_id'] = self.metadata['ophys_experiment_id']
-                    trace_info['cell_index'] = n
-                    trace_info['num_small_baseline_frames'] = self.dff_traces[2][n]
-                    trace_info['num_small_events'] = np.sum(small_event_ind)
-                    trace_info['num_events'] = np.sum(nz_ind)
-                    trace_info['total_small_event_weight'] = np.sum(tmp_nz[small_event_ind])
-                    trace_info['total_event_weight'] = np.sum(tmp_nz)
-
-                    store.append(key=str(self.metadata['ophys_experiment_id'])+'_'+str(n), value=trace_info)
-                store.close()
-
             self.print('done!')
         return np.array(events)
 
