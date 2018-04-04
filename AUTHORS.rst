@@ -10,4 +10,6 @@ Development Lead
 Contributors
 ------------
 
-None yet. Why not be the first?
+* Saskia de Vries <saskiad@alleninstitute.org>
+* Michael Buice <michaelbu@alleninstitute.org>
+* Gabe Ocker <gabeo@alleninstitute.org>
