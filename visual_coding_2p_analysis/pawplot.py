@@ -14,42 +14,42 @@ import pandas as pd
 import matplotlib.patches as mpatch
 from matplotlib.collections import PatchCollection
 import matplotlib.colors as mcolors
-import matplotlib.colorbar 
+import matplotlib.colorbar
 import matplotlib.gridspec as gridspec
+import os
 
-
-def mega_paw_plot(sdata_list=None, sdata_bg_list=None, cdata_list=None, 
-                  cmap=None, clim=None, 
-                  edgecolor='#555555', bgcolor='#cccccc', 
+def mega_paw_plot(sdata_list=None, sdata_bg_list=None, cdata_list=None,
+                  cmap=None, clim=None,
+                  edgecolor='#555555', bgcolor='#cccccc',
                   figsize=None, cbar_orientation='horizontal'):
     if cmap is None:
         cmap = 'magma'
-        
+
     lens = []
     for dl in [ sdata_list, sdata_bg_list, cdata_list ]:
         if dl is not None:
             lens.append(len(dl))
-    
+
     if len(np.unique(lens)) != 1:
         raise Exception("sdata_list, sdata_bg_list, and cdata_list must have the same length")
-        
+
     nrows = len(sdata_list)
     fig = plt.figure(figsize=figsize)
     if cbar_orientation == 'vertical':
         gs = gridspec.GridSpec(nrows, 2, width_ratios=[10, 1])
     elif cbar_orientation == 'horizontal':
         gs = gridspec.GridSpec(nrows+1, 1, height_ratios=[10]*nrows + [1])
-    
+
     for i, (sdata, sdata_bg, cdata) in enumerate(zip(sdata_list, sdata_bg_list, cdata_list)):
         ax = plt.subplot(gs[i,0])
         paw_plot(sdata, sdata_bg, cdata, cmap, clim, edgecolor, bgcolor, legend=False, ax=ax)
-            
+
     if cdata_list:
         if cbar_orientation == 'vertical':
             cbar_ax = plt.subplot(gs[:,1])
         elif cbar_orientation == 'horizontal':
             cbar_ax = plt.subplot(gs[-1])
-            
+
         if clim:
             norm = mcolors.Normalize(vmin=clim[0], vmax=clim[1])
         else:
@@ -61,55 +61,55 @@ def mega_paw_plot(sdata_list=None, sdata_bg_list=None, cdata_list=None,
         cbar.ax.tick_params(labelsize=16)
     return fig
 
-    
+
 def paw_plot(sdata=None, sdata_bg=None, cdata=None, cmap=None, clim=None, edgecolor='#555555', bgcolor='#cccccc', legend=True, ax=None):
     ax = ax if ax else plt.gca()
-        
+
     r = np.array([ 0, 1, 1, 1, 1, 1 ])
-    theta = np.array([ 0, 30, 75, 120, 165, 210 ]) * np.pi / 180.0    
-    
+    theta = np.array([ 0, 30, 75, 120, 165, 210 ]) * np.pi / 180.0
+
     if sdata is None:
         sdata = np.ones(len(r)) * 1000
-                
+
     if cdata is None:
         cdata = np.ones(len(r))
-    
+
     if cmap is None:
         cmap = 'magma'
-        
+
     if clim is None:
         clim = [0,1]
-    
+
     xx = r * np.cos(theta)
-    yy = r * np.sin(theta)            
-    
+    yy = r * np.sin(theta)
+
     patches = [ mpatch.Circle((x,y),rad) for (x,y,rad) in zip(xx,yy,np.sqrt(sdata)) ]
     col = PatchCollection(patches, zorder=2)
-    col.set_array(cdata)    
+    col.set_array(cdata)
     col.set_cmap(cmap)
     col.set_edgecolor(edgecolor)
-    col.set_clim(vmin=clim[0], vmax=clim[1])        
-    
+    col.set_clim(vmin=clim[0], vmax=clim[1])
+
     ax.add_patch(mpatch.Circle((0,0),1,edgecolor=edgecolor,facecolor='none', zorder=0, linestyle='--'))
     ax.add_collection(col)
-    
-    
+
+
     if legend:
         plt.colorbar(col)
-        
-    if sdata_bg is not None: 
+
+    if sdata_bg is not None:
         patches = [ mpatch.Circle((x,y),rad) for (x,y,rad) in zip(xx,yy,np.sqrt(sdata_bg)) ]
         col = PatchCollection(patches, zorder=1)
         col.set_edgecolor(edgecolor)
         col.set_facecolor(bgcolor)
-        ax.add_collection(col)   
-    
-    ax.axis('equal')   
+        ax.add_collection(col)
+
+    ax.axis('equal')
     ax.axis('off')
-    
+
     ax.set_xlim([-1.2,1.2])
     ax.set_ylim([-1.05,1.35])
-    
+
 def save_figure(fig, fname, formats=['.png','.pdf'], transparent=False, dpi=300, facecolor=None, **kwargs):
     import matplotlib as mpl
     mpl.rcParams['pdf.fonttype'] = 42
@@ -130,7 +130,7 @@ def save_figure(fig, fname, formats=['.png','.pdf'], transparent=False, dpi=300,
             dpi=dpi
         )
 
-def make_pawplot_metric(data_input, metric, stimulus_suffix, clim=None):
+def make_pawplot_metric(data_input, metric, stimulus_suffix, clim=None, fig_base_dir='/allen/aibs/mat/gkocker/bob_platform_plots'):
     '''creates and saves a pawplot for a specified single cell metric
 
 Parameters
@@ -149,16 +149,17 @@ stimulus_suffix: string of the stimulus abbreviation (eg. 'dg','sg','ns')
         for j,d in enumerate(depths):
             results[i,j,2] = len(data_input[(data_input.area==a)&(data_input.depth_range==d)])
             results[i,j,1] = len(resp[(resp.area==a)&(resp.depth_range==d)])
-            results[i,j,0] = resp[(resp.area==a)&(resp.depth_range==d)][metric].median()    
+            results[i,j,0] = resp[(resp.area==a)&(resp.depth_range==d)][metric].median()
     if clim is None:
         cmin = np.round(np.nanmin(results[:,:,0]), 1)
         cmax = np.round(np.nanmax(results[:,:,0]), 1)
-        clim = (cmin, cmax)        
+        clim = (cmin, cmax)
 
-    fig = mega_paw_plot(sdata_list=[results[:,0,1]*.000035, results[:,1,1]*.000035, results[:,2,1]*.000035, results[:,3,1]*.000035], 
+    fig = mega_paw_plot(sdata_list=[results[:,0,1]*.000035, results[:,1,1]*.000035, results[:,2,1]*.000035, results[:,3,1]*.000035],
                  sdata_bg_list=[results[:,0,2]*.000035, results[:,1,2]*.000035, results[:,2,2]*.000035, results[:,3,2]*.000035],
                  cdata_list=[results[:,0,0], results[:,1,0], results[:,2,0], results[:,3,0]], clim=clim, edgecolor='#cccccc', figsize=(5,15))
-    figname = r'/Users/saskiad/Documents/CAM/paper figures/'+metric+'_pawplot'
+
+    figname = os.path.join(fig_base_dir, metric+'_pawplot')
     save_figure(fig, figname)
 
 def make_pawplot_fit(data_input, metric_fit, clim=None):
@@ -182,11 +183,11 @@ metric: string of the name of the metric represented in the paw plot
     if clim is None:
         cmin = np.round(np.nanmin(results[:,:,0]), 1)
         cmax = np.round(np.nanmax(results[:,:,0]), 1)
-        clim = (cmin, cmax)  
-    fig = mega_paw_plot(sdata_list=[results[:,0,1]*.000035, results[:,1,1]*.000035, results[:,2,1]*.000035, results[:,3,1]*.000035], 
+        clim = (cmin, cmax)
+    fig = mega_paw_plot(sdata_list=[results[:,0,1]*.000035, results[:,1,1]*.000035, results[:,2,1]*.000035, results[:,3,1]*.000035],
                  sdata_bg_list=[results[:,0,2]*.000035, results[:,1,2]*.000035, results[:,2,2]*.000035, results[:,3,2]*.000035],
                  cdata_list=[results[:,0,0], results[:,1,0], results[:,2,0], results[:,3,0]], clim=clim, edgecolor='#cccccc', figsize=(5,15))
-    figname = r'/Users/saskiad/Documents/CAM/paper figures/'+metric_fit+'_pawplot'
+    figname = os.path.join(fig_base_dir, metric_fit+'_pawplot')
     save_figure(fig, figname)
 
 def make_pawplot_run(data_input, clim=None):
@@ -208,22 +209,22 @@ stimulus_suffix: string of the stimulus abbreviation (eg. 'dg','sg','ns')
         for j,d in enumerate(depths):
             results[i,j,2] = len(data_input[(data_input.area==a)&(data_input.depth_range==d)])
             results[i,j,1] = len(resp[(resp.area==a)&(resp.depth_range==d)])
-            results[i,j,0] = resp[(resp.area==a)&(resp.depth_range==d)]['run_mod_dg'].median()    
+            results[i,j,0] = resp[(resp.area==a)&(resp.depth_range==d)]['run_mod_dg'].median()
     if clim is None:
         cmin = np.round(np.nanmin(results[:,:,0]), 1)
         cmax = np.round(np.nanmax(results[:,:,0]), 1)
-        clim = (cmin, cmax)        
+        clim = (cmin, cmax)
 
-    fig = mega_paw_plot(sdata_list=[results[:,0,1]*.00006, results[:,1,1]*.00006, results[:,2,1]*.00006, results[:,3,1]*.00006], 
+    fig = mega_paw_plot(sdata_list=[results[:,0,1]*.00006, results[:,1,1]*.00006, results[:,2,1]*.00006, results[:,3,1]*.00006],
                  sdata_bg_list=[results[:,0,2]*.00006, results[:,1,2]*.00006, results[:,2,2]*.00006, results[:,3,2]*.00006],
-                 cdata_list=[results[:,0,0], results[:,1,0], results[:,2,0], results[:,3,0]], clim=clim, 
+                 cdata_list=[results[:,0,0], results[:,1,0], results[:,2,0], results[:,3,0]], clim=clim,
                  cmap='PuOr_r',edgecolor='#cccccc', figsize=(5,15))
-    figname = r'/Users/saskiad/Documents/CAM/paper figures/run_mod_dg_pawplot'
+    figname = os.path.join(fig_base_dir, 'run_mod_dg_pawplot')
     save_figure(fig, figname)
 
-    
+
 #population pawplot hasn't been tested yet
-def make_pawplot_population(results, filename, clim=None):
+def make_pawplot_population(results, filename, clim=None, fig_base_dir='/allen/aibs/mat/gkocker/bob_platform_plots'):
     '''creates and saves a pawplot for a population level metric (eg. with no annulus)
 
 Parameters
@@ -236,11 +237,10 @@ filename: string to be used in creating file name for saving figure
         cmin = np.round(np.nanmin(results[:,:,0]), 1)
         cmax = np.round(np.nanmax(results[:,:,0]), 1)
         clim = (cmin, cmax)
-    fig = mega_paw_plot(sdata_list=[results[:,0,1]*.005, results[:,1,1]*.005, results[:,2,1]*.005, results[:,3,1]*.005], 
+    fig = mega_paw_plot(sdata_list=[results[:,0,1]*.005, results[:,1,1]*.005, results[:,2,1]*.005, results[:,3,1]*.005],
                  sdata_bg_list=[results[:,0,1]*.005, results[:,1,1]*.005, results[:,2,1]*.005, results[:,3,1]*.005],
-                 cdata_list=[results[:,0,0], results[:,1,0], results[:,2,0], results[:,3,0]], 
+                 cdata_list=[results[:,0,0], results[:,1,0], results[:,2,0], results[:,3,0]],
                  clim=clim, edgecolor='#cccccc', figsize=(5,15))
-    figname = r'/Users/saskiad/Documents/CAM/paper figures/'+filename+'_pawplot'
-    save_figure(fig, figname)             
 
-    
+    figname = os.path.join(fig_base_dir, filename+'_pawplot')
+    save_figure(fig, figname)

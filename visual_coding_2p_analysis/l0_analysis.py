@@ -9,6 +9,7 @@ import cPickle as pickle
 import warnings
 import os
 import pandas as pd
+import core
 
 # l0 = fast.arfpop
 medfilt = lambda x, s: median_filter(x, s, mode='constant')
@@ -49,11 +50,10 @@ class L0_analysis:
 
     """
     def __init__(self, dataset,
-                       manifest_file='/allen/programs/braintv/workgroups/nc-ophys/ObservatoryPlatformPaperAnalysis/platform_boc_pre_2018_3_16/manifest.json',
                        event_min_size=2., noise_scale=.1, median_filter_1=5401, median_filter_2=101, halflife_ms=None,
-                       sample_rate_hz=30, genotype='Unknown', L0_constrain=False,
-                       cache_directory='/allen/programs/braintv/workgroups/nc-ophys/ObservatoryPlatformPaperAnalysis/events_pre_2018_3_29/', use_cache=True, use_bisection=True):
+                       sample_rate_hz=30, genotype='Unknown', L0_constrain=False, use_cache=True, use_bisection=True):
 
+        manifest_file = core.get_manifest_path()
 
         if type(dataset) is int:
             if manifest_file is None:
@@ -85,7 +85,7 @@ class L0_analysis:
         self.median_filter_1 = median_filter_1
         self.median_filter_2 = median_filter_2
         self.L0_constrain = L0_constrain
-        self.cache_directory = cache_directory
+        self.cache_directory = core.get_cache_path()
 
         self._noise_stds = None
         self._num_small_baseline_frames = None
@@ -274,29 +274,6 @@ class L0_analysis:
             events = np.array(events)
             if self.use_cache:
                 np.savez(self.evfile, ev=events)
-
-                store = pd.HDFStore(self.trace_info_file)
-
-                for n in range(events.shape[0]):
-
-                    nz_ind = (events[n] > 0)
-                    tmp_nz = events[n][nz_ind]
-                    small_event_ind = (tmp_nz < self.dff_traces[1][n] * self.event_min_size)
-
-                    trace_info = pd.DataFrame(columns=('ophys_experiment_id', 'cell_index'
-                    'num_small_baseline_frames', 'num_small_events', 'num_events', 'total_small_event_weight',
-                    'total_event_weight'), index=range(events.shape[0]))
-
-                    trace_info['ophys_experiment_id'] = self.metadata['ophys_experiment_id']
-                    trace_info['cell_index'] = n
-                    trace_info['num_small_baseline_frames'] = self.dff_traces[2][n]
-                    trace_info['num_small_events'] = np.sum(small_event_ind)
-                    trace_info['num_events'] = np.sum(nz_ind)
-                    trace_info['total_small_event_weight'] = np.sum(tmp_nz[small_event_ind])
-                    trace_info['total_event_weight'] = np.sum(tmp_nz)
-
-                    store.append(key=str(self.metadata['ophys_experiment_id'])+'_'+str(n), value=trace_info)
-                store.close()
 
             self.print('done!')
         return np.array(events)
