@@ -13,36 +13,46 @@ import scipy.stats as st
 import core
 
 
-class event_analysis(object):
-    def __init__(self, *args, **kwargs):
-        for k,v in kwargs.iteritems():
-            setattr(self, k, v)
+# class event_analysis(object):
+#     def __init__(self, *args, **kwargs):
+#         for k,v in kwargs.iteritems():
+#             setattr(self, k, v)
+#         self.session_id = session_id
+#         save_path_head = core.get_save_path()
+#         self.save_path = os.path.join(save_path_head, 'NaturalMovies')
+#         self.l0_events = core.get_L0_events(self.session_id)
+#         self.stim_table_2, self.numbercells, self.specimen_ids = core.get_stim_table(self.session_id, 'natural_movie_two')
+#         self.stim_table_1c, _, _ = core.get_stim_table(self.session_id, 'natural_movie_one')
+#
+#
+# class NaturalMoviesC(event_analysis):
+#     def __init__(self, *args, **kwargs):
+#         super(NaturalMoviesC, self).__init__(*args, **kwargs)
+
+class NaturalMoviesC:
+    def __init__(self, session_id):
         self.session_id = session_id
         save_path_head = core.get_save_path()
         self.save_path = os.path.join(save_path_head, 'NaturalMovies')
         self.l0_events = core.get_L0_events(self.session_id)
         self.stim_table_2, self.numbercells, self.specimen_ids = core.get_stim_table(self.session_id, 'natural_movie_two')
         self.stim_table_1c, _, _ = core.get_stim_table(self.session_id, 'natural_movie_one')
-    
-        
-class NaturalMoviesC(event_analysis):    
-    def __init__(self, *args, **kwargs):
-        super(NaturalMoviesC, self).__init__(*args, **kwargs) 
+
         self.response_events_2, self.response_trials_2 = self.get_stimulus_response()
         self.response_events_1c, self.response_trials_1c = self.get_stimulus_response_one()
-        self.peak = self.get_peak() 
+        self.peak = self.get_peak()
         self.save_data()
-     
+
     def get_stimulus_response(self):
         '''Calculates the mean response to the movie
-        
+
 Parameters
 ----------
 
 Returns
 -------
 response events: mean response, s.e.m., and number of responsive trials for each movie frame
-        '''        
+        '''
         numframes=900
         response_events = np.empty((numframes, self.numbercells,3))
         response_trials = np.empty((numframes, self.numbercells, 10))
@@ -53,17 +63,17 @@ response events: mean response, s.e.m., and number of responsive trials for each
             response_events[i,:,2] = self.l0_events[:,starts].astype(bool).sum(axis=1)
             response_trials[i,:,:] = self.l0_events[:,starts]
         return response_events, response_trials
-    
+
     def get_stimulus_response_one(self):
         '''Calculates the mean response to the movie
-        
+
 Parameters
 ----------
 
 Returns
 -------
 response events: mean response, s.e.m., and number of responsive trials for each movie frame
-        '''        
+        '''
         numframes=900
         response_events = np.empty((numframes, self.numbercells,3))
         response_trials = np.empty((numframes, self.numbercells, 10))
@@ -74,7 +84,7 @@ response events: mean response, s.e.m., and number of responsive trials for each
             response_events[i,:,2] = self.l0_events[:,starts].astype(bool).sum(axis=1)
             response_trials[i,:,:] = self.l0_events[:,starts]
         return response_events, response_trials
-        
+
     def get_reliability(self, nc):
         '''computes trial-to-trial reliability of cell to the movie
 
@@ -92,20 +102,20 @@ reliability metric
             for j in range(10):
                 r,p = st.pearsonr(subset[:,i], subset[:,j])
                 corr_matrix[i,j] = r
-                
+
         inds = np.triu_indices(10, k=1)
         upper_2 = corr_matrix[inds[0],inds[1]]
-        
+
         subset = self.response_trials_1c[:,nc,:]
         corr_matrix = np.empty((10,10))
         for i in range(10):
             for j in range(10):
                 r,p = st.pearsonr(subset[:,i], subset[:,j])
                 corr_matrix[i,j] = r
-                
+
         inds = np.triu_indices(10, k=1)
         upper_1c = corr_matrix[inds[0],inds[1]]
-        
+
         return np.nanmean(upper_2), np.nanmean(upper_1c)
 
     def get_peak(self):
@@ -139,7 +149,7 @@ peak dataframe
                 peak.responsive_nm1c.iloc[nc] = True
 
         return peak
-    
+
     def save_data(self):
         save_file = os.path.join(self.save_path, str(self.session_id)+"_nm_events_analysis.h5")
         print "Saving data to: ", save_file
@@ -147,11 +157,11 @@ peak dataframe
         store['peak'] = self.peak
         store.close()
         f = h5py.File(save_file, 'r+')
-        data = f['response_events_2']       
+        data = f['response_events_2']
         data[...] = self.response_events_2
         data1 = f['response_trials_2']
         data1[...] = self.response_trials_2
-        data2 = f['response_events_1c']       
+        data2 = f['response_events_1c']
         data2[...] = self.response_events_1c
         data3 = f['response_trials_1c']
         data3[...] = self.response_trials_1c
@@ -160,7 +170,7 @@ peak dataframe
 if __name__=='__main__':
 #    session_id = 502667200
 #    nm = NaturalMoviesC(session_id=session_id)
-    
+
     from allensdk.core.brain_observatory_cache import BrainObservatoryCache
     fail=[]
     manifest_path = core.get_manifest_path()
