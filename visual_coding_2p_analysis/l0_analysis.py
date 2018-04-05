@@ -9,6 +9,7 @@ import cPickle as pickle
 import warnings
 import os
 import pandas as pd
+import core
 
 # l0 = fast.arfpop
 medfilt = lambda x, s: median_filter(x, s, mode='constant')
@@ -49,11 +50,10 @@ class L0_analysis:
 
     """
     def __init__(self, dataset,
-                       manifest_file='/allen/programs/braintv/workgroups/nc-ophys/ObservatoryPlatformPaperAnalysis/platform_boc_pre_2018_3_16/manifest.json',
                        event_min_size=2., noise_scale=.1, median_filter_1=5401, median_filter_2=101, halflife_ms=None,
-                       sample_rate_hz=30, genotype='Unknown', L0_constrain=False,
-                       cache_directory='/allen/programs/braintv/workgroups/nc-ophys/ObservatoryPlatformPaperAnalysis/events_pre_2018_3_29/', use_cache=True, use_bisection=True):
+                       sample_rate_hz=30, genotype='Unknown', L0_constrain=False, use_cache=True, use_bisection=True):
 
+        manifest_file = core.get_manifest_path()
 
         if type(dataset) is int:
             if manifest_file is None:
@@ -85,7 +85,7 @@ class L0_analysis:
         self.median_filter_1 = median_filter_1
         self.median_filter_2 = median_filter_2
         self.L0_constrain = L0_constrain
-        self.cache_directory = cache_directory
+        self.cache_directory = core.get_cache_path()
 
         self._noise_stds = None
         self._num_small_baseline_frames = None
