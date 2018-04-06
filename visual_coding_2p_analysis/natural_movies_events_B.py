@@ -107,11 +107,10 @@ peak dataframe
         store['peak'] = self.peak
         store.close()
         f = h5py.File(save_file, 'r+')
-        data = f['response_events_1b']       
-        data[...] = self.response_events_1b
-        data1 = f['response_trials_1b']
-        data1[...] = self.response_trials_1b
+        dset = f.create_dataset('response_events_1b', data=self.response_events)
+        dset1 = f.create_dataset('response_trials_1b', data=self.response_trials)
         f.close()
+    
 
 if __name__=='__main__':
 #    session_id = 511458874
