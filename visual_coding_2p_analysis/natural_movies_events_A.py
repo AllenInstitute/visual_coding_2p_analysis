@@ -32,7 +32,7 @@ class NaturalMoviesA:
     def __init__(self, session_id):
         self.session_id = session_id
         save_path_head = core.get_save_path()
-        self.save_path = os.path.join(save_path_head, 'NaturalMovies')
+        self.save_path = os.path.join(save_path_head, 'NaturalMoviesA')
         self.l0_events = core.get_L0_events(self.session_id)
         self.stim_table_3, self.numbercells, self.specimen_ids = core.get_stim_table(self.session_id,
                                                                                      'natural_movie_three')
