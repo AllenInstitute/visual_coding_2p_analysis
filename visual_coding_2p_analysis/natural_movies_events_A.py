@@ -29,7 +29,8 @@ import core
         # super(NaturalMoviesA, self).__init__(*args, **kwargs)
 
 class NaturalMoviesA:
-    def __init__(self, session_id):        self.session_id = session_id
+    def __init__(self, session_id):
+        self.session_id = session_id
         save_path_head = core.get_save_path()
         self.save_path = os.path.join(save_path_head, 'NaturalMovies')
         self.l0_events = core.get_L0_events(self.session_id)
