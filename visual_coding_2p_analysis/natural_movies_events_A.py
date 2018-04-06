@@ -161,12 +161,12 @@ peak dataframe
         store.close()
         f = h5py.File(save_file, 'r+')
 
-        dset = f.create_dataset('response_events_3', data=self.response_events)
-        dset1 = f.create_dataset('response_events_1a', data=self.response_events)
-        dset2 = f.create_dataset('response_trials_3', data=self.response_trials)
-        dset3 = f.create_dataset('response_trials_1a', data=self.response_trials)
+        dset = f.create_dataset('response_events_3', data=self.response_events_3)
+        dset1 = f.create_dataset('response_events_1a', data=self.response_events_1a)
+        dset2 = f.create_dataset('response_trials_3', data=self.response_trials_3)
+        dset3 = f.create_dataset('response_trials_1a', data=self.response_trials_1a)
         f.close()
-        
+
 
 if __name__=='__main__':
 #    session_id = 511595995
