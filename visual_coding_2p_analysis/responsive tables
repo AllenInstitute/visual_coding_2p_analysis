@@ -1,0 +1,158 @@
+#!/usr/bin/env python2
+# -*- coding: utf-8 -*-
+"""
+Created on Wed Apr  4 12:16:50 2018
+
+@author: saskiad
+"""
+import pandas as pd
+
+cres
+areas = ['VISp','VISl','VISal','VISpm','VISam','VISrl']
+depths = [100,200,300,500]
+
+table = pd.DataFrame(columns=('area','cre','depth','number_experiments','number_cells_dg','responsive_cells_dg', 'percent_dg'), index=range(114))
+for ai, a in enumerate(areas):
+    for ci, c in enumerate(cre_depth):
+        i = (ci)+(19*ai)
+        table.area.iloc[i] = a
+        table.cre.iloc[i] = c[0]
+        table.depth.iloc[i] = c[1]
+        table.number_experiments.iloc[i] = len(peak_dg[(peak_dg.area==a)&(peak_dg.tld1_name==c[0])&(peak_dg.depth_range==c[1])].experiment_container_id.unique())
+        table.number_cells_dg.iloc[i] = len(peak_dg[(peak_dg.area==a)&(peak_dg.tld1_name==c[0])&(peak_dg.depth_range==c[1])])
+        table.responsive_cells_dg.iloc[i] = len(peak_dg[(peak_dg.area==a)&(peak_dg.tld1_name==c[0])&(peak_dg.depth_range==c[1])&(peak_dg.responsive_dg)])            
+        if len(peak_dg[(peak_dg.area==a)&(peak_dg.tld1_name==c[0])&(peak_dg.depth_range==c[1])])>0:
+            table.percent_dg.iloc[i] = len(peak_dg[(peak_dg.area==a)&(peak_dg.tld1_name==c[0])&(peak_dg.depth_range==c[1])&(peak_dg.responsive_dg)])/float(len(peak_dg[(peak_dg.area==a)&(peak_dg.tld1_name==c[0])&(peak_dg.depth_range==c[1])]))
+        
+        
+        table.number_cells_sg.iloc[i] = len(peak_sg[(peak_sg.area==a)&(peak_sg.tld1_name==c[0])&(peak_sg.depth_range==c[1])])
+        table.responsive_cells_sg.iloc[i] = len(peak_sg[(peak_sg.area==a)&(peak_sg.tld1_name==c[0])&(peak_sg.depth_range==c[1])&(peak_sg.responsive_sg)])            
+        table.number_cells_ns.iloc[i] = len(peak_ns[(peak_ns.area==a)&(peak_ns.tld1_name==c[0])&(peak_ns.depth_range==c[1])])
+        table.responsive_cells_ns.iloc[i] = len(peak_ns[(peak_ns.area==a)&(peak_ns.tld1_name==c[0])&(peak_ns.depth_range==c[1])&(peak_ns.responsive_ns)])            
+            
+table_sg = pd.DataFrame(columns=('area','cre','depth','number_experiments','number_cells_sg','responsive_cells_sg', 'percent_sg'), index=range(114))
+for ai, a in enumerate(areas):
+    for ci, c in enumerate(cre_depth):
+        i = (ci)+(19*ai)
+        table_sg.area.iloc[i] = a
+        table_sg.cre.iloc[i] = c[0]
+        table_sg.depth.iloc[i] = c[1]
+        table_sg.number_experiments.iloc[i] = len(peak_sg[(peak_sg.area==a)&(peak_sg.tld1_name==c[0])&(peak_sg.depth_range==c[1])].experiment_container_id.unique())
+        table_sg.number_cells_sg.iloc[i] = len(peak_sg[(peak_sg.area==a)&(peak_sg.tld1_name==c[0])&(peak_sg.depth_range==c[1])])
+        table_sg.responsive_cells_sg.iloc[i] = len(peak_sg[(peak_sg.area==a)&(peak_sg.tld1_name==c[0])&(peak_sg.depth_range==c[1])&(peak_sg.responsive_sg)])            
+        if len(peak_sg[(peak_sg.area==a)&(peak_sg.tld1_name==c[0])&(peak_sg.depth_range==c[1])])>0:
+            table_sg.percent_sg.iloc[i] = len(peak_sg[(peak_sg.area==a)&(peak_sg.tld1_name==c[0])&(peak_sg.depth_range==c[1])&(peak_sg.responsive_sg)])/float(len(peak_sg[(peak_sg.area==a)&(peak_sg.tld1_name==c[0])&(peak_sg.depth_range==c[1])]))
+
+
+table_ns = pd.DataFrame(columns=('area','cre','depth','number_experiments','number_cells_ns','responsive_cells_ns', 'percent_ns'), index=range(114))
+for ai, a in enumerate(areas):
+    for ci, c in enumerate(cre_depth):
+        i = (ci)+(19*ai)
+        table_ns.area.iloc[i] = a
+        table_ns.cre.iloc[i] = c[0]
+        table_ns.depth.iloc[i] = c[1]
+        table_ns.number_experiments.iloc[i] = len(peak_ns[(peak_ns.area==a)&(peak_ns.tld1_name==c[0])&(peak_ns.depth_range==c[1])].experiment_container_id.unique())
+        table_ns.number_cells_ns.iloc[i] = len(peak_ns[(peak_ns.area==a)&(peak_ns.tld1_name==c[0])&(peak_ns.depth_range==c[1])])
+        table_ns.responsive_cells_ns.iloc[i] = len(peak_ns[(peak_ns.area==a)&(peak_ns.tld1_name==c[0])&(peak_ns.depth_range==c[1])&(peak_ns.responsive_ns)])            
+        if len(peak_ns[(peak_ns.area==a)&(peak_ns.tld1_name==c[0])&(peak_ns.depth_range==c[1])])>0:
+            table_ns.percent_ns.iloc[i] = len(peak_ns[(peak_ns.area==a)&(peak_ns.tld1_name==c[0])&(peak_ns.depth_range==c[1])&(peak_ns.responsive_ns)])/float(len(peak_ns[(peak_ns.area==a)&(peak_ns.tld1_name==c[0])&(peak_ns.depth_range==c[1])]))
+
+table_nm = pd.DataFrame(columns=('area','cre','depth','number_experiments','number_cells_nm','responsive_cells_nm', 'percent_nm'), index=range(114))
+for ai, a in enumerate(areas):
+    for ci, c in enumerate(cre_depth):
+        i = (ci)+(19*ai)
+        table_nm.area.iloc[i] = a
+        table_nm.cre.iloc[i] = c[0]
+        table_nm.depth.iloc[i] = c[1]
+        table_nm.number_experiments.iloc[i] = len(peak_nm[(peak_nm.area==a)&(peak_nm.tld1_name==c[0])&(peak_nm.depth_range==c[1])].experiment_container_id.unique())
+        table_nm.number_cells_nm.iloc[i] = len(peak_nm[(peak_nm.area==a)&(peak_nm.tld1_name==c[0])&(peak_nm.depth_range==c[1])])
+        table_nm.responsive_cells_nm.iloc[i] = len(peak_nm[(peak_nm.area==a)&(peak_nm.tld1_name==c[0])&(peak_nm.depth_range==c[1])&(peak_nm.responsive_nm3)])            
+        if len(peak_nm[(peak_nm.area==a)&(peak_nm.tld1_name==c[0])&(peak_nm.depth_range==c[1])])>0:
+            table_nm.percent_nm.iloc[i] = len(peak_nm[(peak_nm.area==a)&(peak_nm.tld1_name==c[0])&(peak_nm.depth_range==c[1])&(peak_nm.responsive_nm3)])/float(len(peak_nm[(peak_nm.area==a)&(peak_nm.tld1_name==c[0])&(peak_nm.depth_range==c[1])]))
+
+
+
+exp = pd.DataFrame(columns=('experiment_container_id','cre','area','depth','number_cells','responsive_cells','percent'), index=range(424))
+for i,e in enumerate(peak_dg.experiment_container_id.unique()):
+    subset = peak_dg[peak_dg.experiment_container_id==e]
+    exp.area.loc[i] = subset.area.iloc[0]
+    exp.cre.loc[i] = subset.tld1_name.iloc[0]
+    exp.depth.loc[i] = subset.depth_range.iloc[0]
+    exp.number_cells.loc[i] = len(subset)
+    exp.responsive_cells.loc[i] = len(subset[subset.responsive_dg])
+    exp.percent.loc[i] = len(subset[subset.responsive_dg])/float(len(subset))
+    
+exp['cre_depth'] = np.NaN
+for index, row in exp.iterrows():
+    exp.cre_depth.loc[index] = (row.cre, row.depth)
+
+exp_sg = pd.DataFrame(columns=('experiment_container_id','cre','area','depth','cre_depth','number_cells','responsive_cells','percent'), index=range(424))
+for i,e in enumerate(peak_sg.experiment_container_id.unique()):
+    subset = peak_sg[peak_sg.experiment_container_id==e]
+    exp_sg.area.loc[i] = subset.area.iloc[0]
+    exp_sg.cre.loc[i] = subset.tld1_name.iloc[0]
+    exp_sg.depth.loc[i] = subset.depth_range.iloc[0]
+    exp_sg.number_cells.loc[i] = len(subset)
+    exp_sg.responsive_cells.loc[i] = len(subset[subset.responsive_sg])
+    exp_sg.percent.loc[i] = len(subset[subset.responsive_sg])/float(len(subset))
+
+for index, row in exp_sg.iterrows():
+    exp_sg.cre_depth.loc[index] = (row.cre, row.depth)
+
+
+exp_ns = pd.DataFrame(columns=('experiment_container_id','cre','area','depth','cre_depth','number_cells','responsive_cells','percent'), index=range(424))
+for i,e in enumerate(peak_ns.experiment_container_id.unique()):
+    subset = peak_ns[peak_ns.experiment_container_id==e]
+    exp_ns.area.loc[i] = subset.area.iloc[0]
+    exp_ns.cre.loc[i] = subset.tld1_name.iloc[0]
+    exp_ns.depth.loc[i] = subset.depth_range.iloc[0]
+    exp_ns.number_cells.loc[i] = len(subset)
+    exp_ns.responsive_cells.loc[i] = len(subset[subset.responsive_ns])
+    exp_ns.percent.loc[i] = len(subset[subset.responsive_ns])/float(len(subset))
+
+for index, row in exp_ns.iterrows():
+    exp_ns.cre_depth.loc[index] = (row.cre, row.depth)
+
+
+exp_nm = pd.DataFrame(columns=('experiment_container_id','cre','area','depth','cre_depth','number_cells','responsive_cells','percent'), index=range(424))
+for i,e in enumerate(peak_nm.experiment_container_id.unique()):
+    subset = peak_nm[peak_nm.experiment_container_id==e]
+    exp_nm.area.loc[i] = subset.area.iloc[0]
+    exp_nm.cre.loc[i] = subset.tld1_name.iloc[0]
+    exp_nm.depth.loc[i] = subset.depth_range.iloc[0]
+    exp_nm.number_cells.loc[i] = len(subset)
+    exp_nm.responsive_cells.loc[i] = len(subset[subset.responsive_nm3])
+    exp_nm.percent.loc[i] = len(subset[subset.responsive_nm3])/float(len(subset))
+
+for index, row in exp_nm.iterrows():
+    exp_nm.cre_depth.loc[index] = (row.cre, row.depth)
+
+
+
+    
+sns.boxplot(x='cre_depth',y='percent',data=exp_visp,color='lightgray', order = cre_depth_list)    
+
+def plot_responsive_areas(area):
+    exp_area = exp_nm[exp_nm.area==area]
+    with sns.axes_style('whitegrid'):
+        fig = plt.figure(figsize=(6,16))
+        ax = fig.add_subplot(111)
+        ax = sns.stripplot(y='cre_depth',x='percent',data=exp_area,palette=cre_depth_palette, 
+                      order=cre_depth_list, size=10)
+        plt.yticks(range(19), cre_list)
+        plt.axhline(y=3.5, lw=7, color='w')
+        plt.axhline(y=11.5, lw=7, color='w')
+        plt.axhline(y=17.5, lw=7, color='w')
+        plt.axhspan(-0.5,3.5, color='#DBDBDB', alpha=0.4)
+        plt.axhspan(3.5,11.5, color='#BDBDBD', alpha=0.4)
+        plt.axhspan(11.5,17.5, color='#DBDBDB', alpha=0.4)
+        plt.axhspan(17.5,19, color='#BDBDBD', alpha=0.4)
+        plt.ylabel("")
+        plt.xticks([0,0.2,0.4, 0.6,0.8,1],range(0,101,20))
+        plt.tick_params(labelsize=20)
+        plt.xlabel("Percent responsive", fontsize=24)
+        plt.xlim(-0.05, 1.05)
+        plt.title(area, fontsize=24)
+        fig.tight_layout()
+        figname = r'/Users/saskiad/Documents/CAM/paper figures/nm3_responsive_'+area
+        save_figure(fig, figname)
