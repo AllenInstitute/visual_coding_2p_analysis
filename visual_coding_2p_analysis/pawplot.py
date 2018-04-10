@@ -23,7 +23,7 @@ def mega_paw_plot(sdata_list=None, sdata_bg_list=None, cdata_list=None,
                   edgecolor='#555555', bgcolor='#cccccc',
                   figsize=None, cbar_orientation='horizontal'):
     if cmap is None:
-        cmap = 'magma'
+        cmap = 'plasma'
 
     lens = []
     for dl in [ sdata_list, sdata_bg_list, cdata_list ]:
@@ -224,7 +224,7 @@ stimulus_suffix: string of the stimulus abbreviation (eg. 'dg','sg','ns')
 
 
 #population pawplot hasn't been tested yet
-def make_pawplot_population(results, filename, clim=None, fig_base_dir='/allen/aibs/mat/gkocker/bob_platform_plots'):
+def make_pawplot_population(results, filename, clim=None, scale=.005, fig_base_dir='/allen/aibs/mat/gkocker/bob_platform_plots'):
     '''creates and saves a pawplot for a population level metric (eg. with no annulus)
 
 Parameters
@@ -237,8 +237,8 @@ filename: string to be used in creating file name for saving figure
         cmin = np.round(np.nanmin(results[:,:,0]), 1)
         cmax = np.round(np.nanmax(results[:,:,0]), 1)
         clim = (cmin, cmax)
-    fig = mega_paw_plot(sdata_list=[results[:,0,1]*.005, results[:,1,1]*.005, results[:,2,1]*.005, results[:,3,1]*.005],
-                 sdata_bg_list=[results[:,0,1]*.005, results[:,1,1]*.005, results[:,2,1]*.005, results[:,3,1]*.005],
+    fig = mega_paw_plot(sdata_list=[results[:,0,1]*scale, results[:,1,1]*scale, results[:,2,1]*scale, results[:,3,1]*scale],
+                 sdata_bg_list=[results[:,0,1]*scale, results[:,1,1]*scale, results[:,2,1]*scale, results[:,3,1]*scale],
                  cdata_list=[results[:,0,0], results[:,1,0], results[:,2,0], results[:,3,0]],
                  clim=clim, edgecolor='#cccccc', figsize=(5,15))
 
