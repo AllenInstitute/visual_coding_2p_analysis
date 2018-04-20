@@ -23,7 +23,7 @@ def mega_paw_plot(sdata_list=None, sdata_bg_list=None, cdata_list=None,
                   edgecolor='#555555', bgcolor='#cccccc',
                   figsize=None, cbar_orientation='horizontal'):
     if cmap is None:
-        cmap = 'magma'
+        cmap = 'plasma'
 
     lens = []
     for dl in [ sdata_list, sdata_bg_list, cdata_list ]:
@@ -59,6 +59,14 @@ def mega_paw_plot(sdata_list=None, sdata_bg_list=None, cdata_list=None,
                                                 norm=norm,
                                                 orientation=cbar_orientation)
         cbar.ax.tick_params(labelsize=16)
+        cbar.set_ticks(np.arange(clim[0], clim[1]+0.05, 0.1))
+        cbar.set_ticklabels(np.arange(clim[0], clim[1]+0.05, 0.1))
+#        cbar.set_ticks([clim[0], clim[1]])
+#        cbar.set_ticklabels([clim[0], clim[1]])
+#        cbar.set_ticks([200,300,400,500,600])
+#        cbar.set_ticks([0,0.5,1,1.5,2])
+#        cbar.set_ticklabels([1,1.5,2,3,4])
+#        cbar.set_ticklabels([0.02,0.03,0.04,0.06,0.08])
     return fig
 
 
@@ -130,7 +138,7 @@ def save_figure(fig, fname, formats=['.png','.pdf'], transparent=False, dpi=300,
             dpi=dpi
         )
 
-def make_pawplot_metric(data_input, metric, stimulus_suffix, clim=None, fig_base_dir='/allen/aibs/mat/gkocker/bob_platform_plots'):
+def make_pawplot_metric(data_input, metric, stimulus_suffix, clim=None, fig_base_dir=r'/Users/saskiad/Documents/CAM/paper figures/'):
     '''creates and saves a pawplot for a specified single cell metric
 
 Parameters
@@ -161,8 +169,107 @@ stimulus_suffix: string of the stimulus abbreviation (eg. 'dg','sg','ns')
 
     figname = os.path.join(fig_base_dir, metric+'_pawplot')
     save_figure(fig, figname)
+    
+def make_pawplot_metric_crespecific(data_input, metric, stimulus_suffix, clim=None, fig_base_dir=r'/Users/saskiad/Documents/CAM/paper figures/'):
+    '''creates and saves a pawplot for a specified single cell metric
 
-def make_pawplot_fit(data_input, metric_fit, clim=None):
+Parameters
+----------
+data_input: pandas dataframe
+metric: string of the name of the metric represented in the paw plot
+stimulus_suffix: string of the stimulus abbreviation (eg. 'dg','sg','ns')
+
+        '''
+    areas_pp = ['VISp', 'VISpm', 'VISam', 'VISrl', 'VISal', 'VISl']
+#    depths = [100,200,300,500]
+    cre_depth = [('Cux2-CreERT2',100),('Rorb-IRES2-Cre',200),('Rbp4-Cre_KL100',300), ('Ntsr1-Cre_GN220',500)]
+    responsive = 'responsive_'+stimulus_suffix
+    resp = data_input[data_input[responsive]==True]
+    results = np.empty((6,4,3))
+    for i,a in enumerate(areas_pp):
+        for j,d in enumerate(cre_depth):
+            results[i,j,2] = len(data_input[(data_input.area==a)&(data_input.tld1_name==d[0])&(data_input.depth_range==d[1])])
+            results[i,j,1] = len(resp[(resp.area==a)&(resp.tld1_name==d[0])&(resp.depth_range==d[1])])
+            results[i,j,0] = resp[(resp.area==a)&(resp.tld1_name==d[0])&(resp.depth_range==d[1])][metric].median()
+    if clim is None:
+        cmin = np.round(np.nanmin(results[:,:,0]), 1)
+        cmax = np.round(np.nanmax(results[:,:,0]), 1)
+        clim = (cmin, cmax)
+
+    fig = mega_paw_plot(sdata_list=[results[:,0,1]*.00013, results[:,1,1]*.00013, results[:,2,1]*.00013, results[:,3,1]*.00013],
+                 sdata_bg_list=[results[:,0,2]*.00013, results[:,1,2]*.00013, results[:,2,2]*.00013, results[:,3,2]*.00013],
+                 cdata_list=[results[:,0,0], results[:,1,0], results[:,2,0], results[:,3,0]], clim=clim, edgecolor='#cccccc', figsize=(5,15))
+
+    figname = os.path.join(fig_base_dir, metric+'_cre_pawplot')
+    print figname
+    save_figure(fig, figname)
+    
+def make_pawplot_metric_crespecific_dual(data_input, metric, stimulus_suffix1, stimulus_suffix2, clim=None, fig_base_dir=r'/Users/saskiad/Documents/CAM/paper figures/'):
+    '''creates and saves a pawplot for a specified single cell metric
+
+Parameters
+----------
+data_input: pandas dataframe
+metric: string of the name of the metric represented in the paw plot
+stimulus_suffix: string of the stimulus abbreviation (eg. 'dg','sg','ns')
+
+        '''
+    areas_pp = ['VISp', 'VISpm', 'VISam', 'VISrl', 'VISal', 'VISl']
+#    depths = [100,200,300,500]
+    cre_depth = [('Cux2-CreERT2',100),('Rorb-IRES2-Cre',200),('Rbp4-Cre_KL100',300), ('Ntsr1-Cre_GN220',500)]
+    responsive1 = 'responsive_'+stimulus_suffix1
+    responsive2 = 'responsive_'+stimulus_suffix2
+    resp = data_input[(data_input[responsive1]==True)&(data_input[responsive2])]
+    results = np.empty((6,4,3))
+    for i,a in enumerate(areas_pp):
+        for j,d in enumerate(cre_depth):
+            results[i,j,2] = len(data_input[(data_input.area==a)&(data_input.tld1_name==d[0])&(data_input.depth_range==d[1])])
+            results[i,j,1] = len(resp[(resp.area==a)&(resp.tld1_name==d[0])&(resp.depth_range==d[1])])
+            results[i,j,0] = resp[(resp.area==a)&(resp.tld1_name==d[0])&(resp.depth_range==d[1])][metric].median()
+    if clim is None:
+        cmin = np.round(np.nanmin(results[:,:,0]), 1)
+        cmax = np.round(np.nanmax(results[:,:,0]), 1)
+        clim = (cmin, cmax)
+
+    fig = mega_paw_plot(sdata_list=[results[:,0,1]*.00013, results[:,1,1]*.00013, results[:,2,1]*.00013, results[:,3,1]*.00013],
+                 sdata_bg_list=[results[:,0,2]*.00013, results[:,1,2]*.00013, results[:,2,2]*.00013, results[:,3,2]*.00013],
+                 cdata_list=[results[:,0,0], results[:,1,0], results[:,2,0], results[:,3,0]], clim=clim, edgecolor='#cccccc', figsize=(5,15))
+
+    figname = os.path.join(fig_base_dir, metric+'_cre_pawplot')
+    save_figure(fig, figname)
+
+def make_pawplot_metric_crespecific_noresp(data_input, metric, clim=None, fig_base_dir=r'/Users/saskiad/Documents/CAM/paper figures/'):
+    '''creates and saves a pawplot for a specified single cell metric
+
+Parameters
+----------
+data_input: pandas dataframe
+metric: string of the name of the metric represented in the paw plot
+stimulus_suffix: string of the stimulus abbreviation (eg. 'dg','sg','ns')
+
+        '''
+    areas_pp = ['VISp', 'VISpm', 'VISam', 'VISrl', 'VISal', 'VISl']
+#    depths = [100,200,300,500]
+    cre_depth = [('Cux2-CreERT2',100),('Rorb-IRES2-Cre',200),('Rbp4-Cre_KL100',300), ('Ntsr1-Cre_GN220',500)]
+    results = np.empty((6,4,3))
+    for i,a in enumerate(areas_pp):
+        for j,d in enumerate(cre_depth):
+            results[i,j,2] = len(data_input[(data_input.area==a)&(data_input.tld1_name==d[0])&(data_input.depth_range==d[1])])
+            results[i,j,1] = len(data_input[(data_input.area==a)&(data_input.tld1_name==d[0])&(data_input.depth_range==d[1])])
+            results[i,j,0] = data_input[(data_input.area==a)&(data_input.tld1_name==d[0])&(data_input.depth_range==d[1])][metric].median()
+    if clim is None:
+        cmin = np.round(np.nanmin(results[:,:,0]), 1)
+        cmax = np.round(np.nanmax(results[:,:,0]), 1)
+        clim = (cmin, cmax)
+
+    fig = mega_paw_plot(sdata_list=[results[:,0,1]*.00013, results[:,1,1]*.00013, results[:,2,1]*.00013, results[:,3,1]*.00013],
+                 sdata_bg_list=[results[:,0,2]*.00013, results[:,1,2]*.00013, results[:,2,2]*.00013, results[:,3,2]*.00013],
+                 cdata_list=[results[:,0,0], results[:,1,0], results[:,2,0], results[:,3,0]], clim=clim, edgecolor='#cccccc', figsize=(5,15))
+
+    figname = os.path.join(fig_base_dir, metric+'_cre_pawplot')
+    save_figure(fig, figname)
+
+def make_pawplot_fit(data_input, metric_fit, clim=None, fig_base_dir=r'/Users/saskiad/Documents/CAM/paper figures/'):
     '''creates and saves a pawplot for a fit parameter (eg. TF or SF)
 
 Parameters
@@ -188,6 +295,35 @@ metric: string of the name of the metric represented in the paw plot
                  sdata_bg_list=[results[:,0,2]*.000035, results[:,1,2]*.000035, results[:,2,2]*.000035, results[:,3,2]*.000035],
                  cdata_list=[results[:,0,0], results[:,1,0], results[:,2,0], results[:,3,0]], clim=clim, edgecolor='#cccccc', figsize=(5,15))
     figname = os.path.join(fig_base_dir, metric_fit+'_pawplot')
+    save_figure(fig, figname)
+    
+
+def make_pawplot_fit_crespecific(data_input, metric_fit, clim=None, fig_base_dir=r'/Users/saskiad/Documents/CAM/paper figures/'):
+    '''creates and saves a pawplot for a fit parameter (eg. TF or SF)
+
+Parameters
+----------
+data_input: pandas dataframe
+metric: string of the name of the metric represented in the paw plot
+
+        '''
+    areas_pp = ['VISp', 'VISpm', 'VISam', 'VISrl', 'VISal', 'VISl']
+    cre_depth = [('Cux2-CreERT2',100),('Rorb-IRES2-Cre',200),('Rbp4-Cre_KL100',300), ('Ntsr1-Cre_GN220',500)]
+    resp = data_input[(data_input[metric_fit]>=0)&(data_input[metric_fit]<=4)]
+    results = np.empty((6,4,3))
+    for i,a in enumerate(areas_pp):
+        for j,d in enumerate(cre_depth):
+            results[i,j,2] = len(data_input[(data_input.area==a)&(data_input.tld1_name==d[0])&(data_input.depth_range==d[1])])
+            results[i,j,1] = len(resp[(resp.area==a)&(resp.tld1_name==d[0])&(resp.depth_range==d[1])])
+            results[i,j,0] = resp[(resp.area==a)&(resp.tld1_name==d[0])&(resp.depth_range==d[1])][metric_fit].median()
+    if clim is None:
+        cmin = np.round(np.nanmin(results[:,:,0]), 1)
+        cmax = np.round(np.nanmax(results[:,:,0]), 1)
+        clim = (cmin, cmax)
+    fig = mega_paw_plot(sdata_list=[results[:,0,1]*.00013, results[:,1,1]*.00013, results[:,2,1]*.00013, results[:,3,1]*.00013],
+                 sdata_bg_list=[results[:,0,2]*.00013, results[:,1,2]*.00013, results[:,2,2]*.00013, results[:,3,2]*.00013],
+                 cdata_list=[results[:,0,0], results[:,1,0], results[:,2,0], results[:,3,0]], clim=clim, edgecolor='#cccccc', figsize=(5,15))
+    figname = os.path.join(fig_base_dir, metric_fit+'_cre_pawplot')
     save_figure(fig, figname)
 
 def make_pawplot_run(data_input, clim=None):
@@ -224,7 +360,7 @@ stimulus_suffix: string of the stimulus abbreviation (eg. 'dg','sg','ns')
 
 
 #population pawplot hasn't been tested yet
-def make_pawplot_population(results, filename, clim=None, fig_base_dir='/allen/aibs/mat/gkocker/bob_platform_plots'):
+def make_pawplot_population(results, filename, clim=None, fig_base_dir=r'/Users/saskiad/Documents/CAM/paper figures/'):
     '''creates and saves a pawplot for a population level metric (eg. with no annulus)
 
 Parameters
@@ -237,10 +373,11 @@ filename: string to be used in creating file name for saving figure
         cmin = np.round(np.nanmin(results[:,:,0]), 1)
         cmax = np.round(np.nanmax(results[:,:,0]), 1)
         clim = (cmin, cmax)
-    fig = mega_paw_plot(sdata_list=[results[:,0,1]*.005, results[:,1,1]*.005, results[:,2,1]*.005, results[:,3,1]*.005],
-                 sdata_bg_list=[results[:,0,1]*.005, results[:,1,1]*.005, results[:,2,1]*.005, results[:,3,1]*.005],
+    fig = mega_paw_plot(sdata_list=[results[:,0,1]*.015, results[:,1,1]*.015, results[:,2,1]*.015, results[:,3,1]*.015],
+                 sdata_bg_list=[results[:,0,1]*.015, results[:,1,1]*.015, results[:,2,1]*.015, results[:,3,1]*.015],
                  cdata_list=[results[:,0,0], results[:,1,0], results[:,2,0], results[:,3,0]],
                  clim=clim, edgecolor='#cccccc', figsize=(5,15))
 
     figname = os.path.join(fig_base_dir, filename+'_pawplot')
     save_figure(fig, figname)
+
