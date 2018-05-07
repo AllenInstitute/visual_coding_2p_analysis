@@ -157,7 +157,7 @@ def save_figure(fig, fname, formats=['.png','.pdf'], transparent=False, dpi=300,
         )
 
 
-def plot_strip_plot(data_input, area, plot_key, x_label, fig_base_dir='/allen/aibs/mat/gkocker/bob_platform_plots', figname='dg_decoding_performance'):
+def plot_strip_plot(data_input, area, plot_key, x_label, fig_base_dir='/allen/aibs/mat/gkocker/bob_platform_plots', figname='dg_decoding_performance', Nticks=10, xlim=None, box=False, bar=False, point=False):
 
 
     cre_depth_list = [('Emx1-IRES-Cre',100), ('Slc17a7-IRES2-Cre', 100),('Cux2-CreERT2',100),('Vip-IRES-Cre',100),
@@ -179,8 +179,41 @@ def plot_strip_plot(data_input, area, plot_key, x_label, fig_base_dir='/allen/ai
     with sns.axes_style('whitegrid'):
         fig = plt.figure(figsize=(6,16))
         ax = fig.add_subplot(111)
+
         ax = sns.stripplot(y='cre_depth',x=plot_key,data=exp_area,palette=cre_depth_palette,
                       order=cre_depth_list, size=10)
+
+        if box:
+            ax = sns.boxplot(y='cre_depth', x=plot_key, data=exp_area, palette=cre_depth_palette, order=cre_depth_list, whis=np.inf)
+        if bar:
+            ax = sns.barplot(y='cre_depth', x=plot_key, data=exp_area, palette=cre_depth_palette, order=cre_depth_list, ci=None, alpha=0.5)
+        if point:
+            ax = sns.pointplot(y='cre_depth', x=plot_key, data=exp_area, palette=cre_depth_palette, order=cre_depth_list,
+                             ci=None, markers='|', markersize=30, join=False)
+
+
+        # if np.amax(exp_area[plot_key].values[np.isfinite(exp_area[plot_key])]) <= 1:
+        #     plt.xticks([0,0.2,0.4, 0.6,0.8,1],range(0,101,20))
+        #     plt.xlim(-0.05, 1.05)
+        # else:
+
+        if xlim is None:
+            xmax = int(np.ceil(np.amax(exp_area[plot_key].values[np.isfinite(exp_area[plot_key])])))
+            xmin = int(np.floor(np.amin(exp_area[plot_key].values[np.isfinite(exp_area[plot_key])])))
+            x_spacing = max(int(np.round( (xmax - xmin) / Nticks)), 1)
+
+            xmin -= np.remainder(xmin, x_spacing)
+
+        else:
+            xmin, xmax = xlim
+            x_spacing = max(int(np.round( (xmax - xmin) / Nticks)), 1)
+
+        plt.xticks(range(xmin, xmax+x_spacing, x_spacing ) )
+        plt.xlim(xmin-0.1, xmax+.1)
+
+
+        if xmax > 0 and xmin < 0:
+            plt.axvline(x=0, lw=1, color='k')
 
         plt.yticks(range(19), cre_list)
         plt.axhline(y=3.5, lw=7, color='w')
@@ -191,13 +224,7 @@ def plot_strip_plot(data_input, area, plot_key, x_label, fig_base_dir='/allen/ai
         plt.axhspan(11.5,17.5, color='#DBDBDB', alpha=0.4)
         plt.axhspan(17.5,19, color='#BDBDBD', alpha=0.4)
         plt.ylabel("")
-
-        if np.amax(exp_area[plot_key].values[np.isfinite(exp_area[plot_key])]) <= 1:
-            plt.xticks([0,0.2,0.4, 0.6,0.8,1],range(0,101,20))
-            plt.xlim(-0.05, 1.05)
-        else:
-            plt.xticks(range(0, int(np.ceil(np.amax(exp_area[plot_key].values[np.isfinite(exp_area[plot_key])])))) )
-            plt.xlim(-0.05, int(np.ceil(np.amax(exp_area[plot_key].values[np.isfinite(exp_area[plot_key])]))))
+        ax.yaxis.tick_right()
 
         plt.tick_params(labelsize=20)
         plt.xlabel(x_label, fontsize=24)

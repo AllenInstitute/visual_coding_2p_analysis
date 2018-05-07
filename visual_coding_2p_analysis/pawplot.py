@@ -17,11 +17,12 @@ import matplotlib.colors as mcolors
 import matplotlib.colorbar
 import matplotlib.gridspec as gridspec
 import os
+import colorcet as cc
 
 def mega_paw_plot(sdata_list=None, sdata_bg_list=None, cdata_list=None,
-                  cmap=None, clim=None,
+                  cmap=None, clim=None, cmid=0,
                   edgecolor='#555555', bgcolor='#cccccc',
-                  figsize=None, cbar_orientation='horizontal'):
+                  figsize=(5, 15), cbar_orientation='horizontal'):
     if cmap is None:
         cmap = 'plasma'
 
@@ -57,12 +58,12 @@ def mega_paw_plot(sdata_list=None, sdata_bg_list=None, cdata_list=None,
                                      vmax=max([cdata.max() for cdata in cdata_list]))
         cbar = matplotlib.colorbar.ColorbarBase(cbar_ax, cmap=cmap,
                                                 norm=norm,
-                                                orientation=cbar_orientation)
+                                                orientation=cbar_orientation, ticks=np.linspace(clim[0], clim[1], num=5))
         cbar.ax.tick_params(labelsize=16)
     return fig
 
 
-def paw_plot(sdata=None, sdata_bg=None, cdata=None, cmap=None, clim=None, edgecolor='#555555', bgcolor='#cccccc', legend=True, ax=None):
+def paw_plot(sdata=None, sdata_bg=None, cdata=None, cmap=None, clim=None, cmid=None, edgecolor='#555555', bgcolor='#cccccc', legend=True, ax=None):
     ax = ax if ax else plt.gca()
 
     r = np.array([ 0, 1, 1, 1, 1, 1 ])
@@ -224,7 +225,7 @@ stimulus_suffix: string of the stimulus abbreviation (eg. 'dg','sg','ns')
 
 
 #population pawplot hasn't been tested yet
-def make_pawplot_population(results, filename, clim=None, scale=.005, fig_base_dir='/allen/aibs/mat/gkocker/bob_platform_plots'):
+def make_pawplot_population(results, filename, clim=None, scale=.005, cmap=None, cstep=0.1, symmetric_cmap=False, cmid=0, fig_base_dir='/allen/aibs/mat/gkocker/bob_platform_plots'):
     '''creates and saves a pawplot for a population level metric (eg. with no annulus)
 
 Parameters
@@ -234,13 +235,26 @@ filename: string to be used in creating file name for saving figure
 
         '''
     if clim is None:
-        cmin = np.round(np.nanmin(results[:,:,0]), 1)
-        cmax = np.round(np.nanmax(results[:,:,0]), 1)
-        clim = (cmin, cmax)
+
+        ctest = np.arange(np.floor(np.nanmin(results[:, :, 0])), np.ceil(np.nanmax(results[:, :, 0]))+cstep, cstep)
+        cmin = ctest[ctest < np.nanmin(results[:, :, 0])][-1]
+        cmax = ctest[ctest > np.nanmax(results[:, :, 0])][0]
+
+        # cmin = np.round(np.nanmin(results[:,:,0]), 1)
+        # cmax = np.round(np.nanmax(results[:,:,0]), 1)
+
+        if not symmetric_cmap:
+            clim = (cmin, cmax)
+        else:
+            cmax = max(np.abs(cmax), np.abs(cmin))
+            clim = (-cmax + cmid, cmax + cmid)
+
+
     fig = mega_paw_plot(sdata_list=[results[:,0,1]*scale, results[:,1,1]*scale, results[:,2,1]*scale, results[:,3,1]*scale],
                  sdata_bg_list=[results[:,0,1]*scale, results[:,1,1]*scale, results[:,2,1]*scale, results[:,3,1]*scale],
                  cdata_list=[results[:,0,0], results[:,1,0], results[:,2,0], results[:,3,0]],
-                 clim=clim, edgecolor='#cccccc', figsize=(5,15))
+                 clim=clim, cmap=cmap, cmid=cmid, edgecolor='#cccccc', figsize=(5,15))
 
+    fig.tight_layout()
     figname = os.path.join(fig_base_dir, filename+'_pawplot')
     save_figure(fig, figname)
