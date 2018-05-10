@@ -206,13 +206,18 @@ def plot_strip_plot(data_input, area, plot_key, x_label, fig_base_dir='/allen/ai
 
         else:
             xmin, xmax = xlim
-            x_spacing = max(int(np.round( (xmax - xmin) / Nticks)), 1)
 
-        plt.xticks(range(xmin, xmax+x_spacing, x_spacing ) )
+            xscale = max(abs(xmin), abs(xmax))
+            xmin, xmax = xmin/xscale, xmax/xscale
+
+            x_spacing = max(int(np.round( (xmax - xmin) / Nticks)), 1) * xscale
+            xmin, xmax = xmin*xscale, xmax*xscale
+
+        plt.xticks(np.arange(xmin, xmax+x_spacing, x_spacing ) )
         plt.xlim(xmin-0.1, xmax+.1)
 
 
-        if xmax > 0 and xmin < 0:
+        if xmax > 0 and xmin <= 0:
             plt.axvline(x=0, lw=1, color='k')
 
         plt.yticks(range(19), cre_list)
