@@ -12,37 +12,48 @@ import scipy.stats as st
 import core
 
 
-class event_analysis(object):
-    def __init__(self, *args, **kwargs):
-        for k,v in kwargs.iteritems():
-            setattr(self, k, v)
+# class event_analysis(object):
+#     def __init__(self, *args, **kwargs):
+#         for k,v in kwargs.iteritems():
+#             setattr(self, k, v)
+#         self.session_id = session_id
+#         save_path_head = core.get_save_path()
+#         self.save_path = os.path.join(save_path_head, 'NaturalMovies')
+#         self.l0_events = core.get_L0_events(self.session_id)
+#         self.stim_table_3, self.numbercells, self.specimen_ids = core.get_stim_table(self.session_id, 'natural_movie_three')
+#         self.stim_table_1a, _, _ = core.get_stim_table(self.session_id, 'natural_movie_one')
+
+
+# class NaturalMoviesA(event_analysis):
+#     def __init__(self, *args, **kwargs):
+        # super(NaturalMoviesA, self).__init__(*args, **kwargs)
+
+class NaturalMoviesA:
+    def __init__(self, session_id):
         self.session_id = session_id
         save_path_head = core.get_save_path()
-        self.save_path = os.path.join(save_path_head, 'NaturalMovies')
+        self.save_path = os.path.join(save_path_head, 'NaturalMoviesA')
         self.l0_events = core.get_L0_events(self.session_id)
-        self.stim_table_3, self.numbercells, self.specimen_ids = core.get_stim_table(self.session_id, 'natural_movie_three')
+        self.stim_table_3, self.numbercells, self.specimen_ids = core.get_stim_table(self.session_id,
+                                                                                     'natural_movie_three')
         self.stim_table_1a, _, _ = core.get_stim_table(self.session_id, 'natural_movie_one')
-    
-        
-class NaturalMoviesA(event_analysis):    
-    def __init__(self, *args, **kwargs):
-        super(NaturalMoviesA, self).__init__(*args, **kwargs) 
+
         self.response_events_3, self.response_trials_3 = self.get_stimulus_response()
         self.response_events_1a, self.response_trials_1a = self.get_stimulus_response_one()
-        self.peak = self.get_peak() 
+        self.peak = self.get_peak()
         self.save_data()
- 
-    
+
+
     def get_stimulus_response(self):
         '''Calculates the mean response to the movie
-        
+
 Parameters
 ----------
 
 Returns
 -------
 response events: mean response, s.e.m., and number of responsive trials for each movie frame
-        '''        
+        '''
         numframes=3600
         response_events = np.empty((numframes, self.numbercells,3))
         response_trials = np.empty((numframes, self.numbercells, 10))
@@ -53,17 +64,17 @@ response events: mean response, s.e.m., and number of responsive trials for each
             response_events[i,:,2] = self.l0_events[:,starts].astype(bool).sum(axis=1)
             response_trials[i,:,:] = self.l0_events[:,starts]
         return response_events, response_trials
-    
+
     def get_stimulus_response_one(self):
         '''Calculates the mean response to the movie
-        
+
 Parameters
 ----------
 
 Returns
 -------
 response events: mean response, s.e.m., and number of responsive trials for each movie frame
-        '''        
+        '''
         numframes=900
         response_events = np.empty((numframes, self.numbercells,3))
         response_trials = np.empty((numframes, self.numbercells, 10))
@@ -74,7 +85,7 @@ response events: mean response, s.e.m., and number of responsive trials for each
             response_events[i,:,2] = self.l0_events[:,starts].astype(bool).sum(axis=1)
             response_trials[i,:,:] = self.l0_events[:,starts]
         return response_events, response_trials
-        
+
     def get_reliability(self, nc):
         '''computes trial-to-trial reliability of cell to the movie
 
@@ -92,20 +103,20 @@ reliability metric
             for j in range(10):
                 r,p = st.pearsonr(subset[:,i], subset[:,j])
                 corr_matrix[i,j] = r
-                
+
         inds = np.triu_indices(10, k=1)
         upper_3 = corr_matrix[inds[0],inds[1]]
-        
+
         subset = self.response_trials_1a[:,nc,:]
         corr_matrix = np.empty((10,10))
         for i in range(10):
             for j in range(10):
                 r,p = st.pearsonr(subset[:,i], subset[:,j])
                 corr_matrix[i,j] = r
-                
+
         inds = np.triu_indices(10, k=1)
         upper_1a = corr_matrix[inds[0],inds[1]]
-        
+
         return np.nanmean(upper_3), np.nanmean(upper_1a)
 
     def get_peak(self):
@@ -127,9 +138,9 @@ peak dataframe
         peak['lifetime_sparseness_nm3'] = ltsparseness_3
         peak['lifetime_sparseness_nm1a'] = ltsparseness_1a
         peak['responsive_nm3'] = False
-#        peak['responsive_nm3'][np.where(self.response_events_3[:,:,2].max(axis=0)>2)[0]] = True        
+#        peak['responsive_nm3'][np.where(self.response_events_3[:,:,2].max(axis=0)>2)[0]] = True
         peak['responsive_nm1a'] = False
-#        peak['responsive_nm1a'][np.where(self.response_events_1a[:,:,2].max(axis=0)>2)[0]] = True        
+#        peak['responsive_nm1a'][np.where(self.response_events_1a[:,:,2].max(axis=0)>2)[0]] = True
 
         for nc in range(self.numbercells):
             peak.reliability_nm3.iloc[nc], peak.reliability_nm1a.iloc[nc] = self.get_reliability(nc)
@@ -141,7 +152,7 @@ peak dataframe
                 peak.responsive_nm1a.iloc[nc] = True
 
         return peak
-    
+
     def save_data(self):
         save_file = os.path.join(self.save_path, str(self.session_id)+"_nm_events_analysis.h5")
         print "Saving data to: ", save_file
@@ -149,17 +160,18 @@ peak dataframe
         store['peak'] = self.peak
         store.close()
         f = h5py.File(save_file, 'r+')
-        dset = f.create_dataset('response_events_3', data=self.response_events)
-        dset1 = f.create_dataset('response_events_1a', data=self.response_events)
-        dset2 = f.create_dataset('response_trials_3', data=self.response_trials)
-        dset3 = f.create_dataset('response_trials_1a', data=self.response_trials)
+
+        dset = f.create_dataset('response_events_3', data=self.response_events_3)
+        dset1 = f.create_dataset('response_events_1a', data=self.response_events_1a)
+        dset2 = f.create_dataset('response_trials_3', data=self.response_trials_3)
+        dset3 = f.create_dataset('response_trials_1a', data=self.response_trials_1a)
         f.close()
-        
+
 
 if __name__=='__main__':
 #    session_id = 511595995
 #    nm = NaturalMoviesA(session_id=session_id)
-    
+
     from allensdk.core.brain_observatory_cache import BrainObservatoryCache
     fail=[]
     manifest_path = core.get_manifest_path()
@@ -172,4 +184,3 @@ if __name__=='__main__':
             nm = NaturalMoviesA(session_id=session_id)
         except:
             fail.append(a)
-    
