@@ -119,11 +119,11 @@ class L0_analysis:
         # self.l0_func = None
 
 
-    def l0(self, dff, gamma, l, constraint):                                                                                                                          
-        ev = fast.estimate_spikes(dff, gamma, l, constraint, estimate_calcium=True)                                                
-        out = np.zeros(ev['dat'].shape)                                                                                                                               
-        out[ev['spikes']-1] = ev['pos_spike_mag']                                                                                  
-        return out 
+    def l0(self, dff, gamma, l, constraint):
+        ev = fast.estimate_spikes(dff, gamma, l, constraint, estimate_calcium=True)
+        out = np.zeros(ev['dat'].shape)
+        out[ev['spikes']-1] = ev['pos_spike_mag']
+        return out
 
     @property
     def trace_info_file(self):
@@ -210,7 +210,7 @@ class L0_analysis:
             return 436
         elif 'tetO' in genotype and '6s' in genotype:
             return 348
-        elif 'Emx1' in genotype and 'Ai94' in genotype:
+        elif ('Ai94' in genotype) or ('Ai162' in genotype):
             return 649
         elif 'Emx1' in genotype and 'Ai93' in genotype:
             return 315
