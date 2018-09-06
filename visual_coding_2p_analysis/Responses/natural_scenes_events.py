@@ -68,7 +68,7 @@ response trials:
             for nc in range(self.numbercells):
                 sweep_events[str(nc)][index] = self.l0_events[nc, int(row.start)-28:int(row.start)+35]
             running_speed.running_speed[index] = self.dxcm[int(row.start):int(row.start)+7].mean()
-        mean_sweep_events = sweep_events.applymap(do_sweep_mean_shifted)
+        mean_sweep_events = sweep_events.map(do_sweep_mean_shifted)
 
         #make spontaneous p_values
         shuffled_responses = np.empty((self.numbercells, 10000,10))
