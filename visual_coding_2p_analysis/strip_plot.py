@@ -136,7 +136,7 @@ def example_code():
     sns.boxplot(x='cre_depth',y='percent',data=exp_visp,color='lightgray', order = cre_depth_list)
 
 
-def save_figure(fig, fname, formats=['.png','.pdf'], transparent=False, dpi=300, facecolor=None, **kwargs):
+def save_figure(fig, fname, formats=['.pdf'], transparent=False, dpi=300, facecolor=None, **kwargs):
     import matplotlib as mpl
     mpl.rcParams['pdf.fonttype'] = 42
 
@@ -157,7 +157,7 @@ def save_figure(fig, fname, formats=['.png','.pdf'], transparent=False, dpi=300,
         )
 
 
-def plot_strip_plot(data_input, area, plot_key, x_label, fig_base_dir='/allen/aibs/mat/gkocker/bob_platform_plots', figname='dg_decoding_performance', Nticks=10, xlim=None, box=False, bar=False, point=False):
+def plot_strip_plot(data_input, area, plot_key, x_label, fig_base_dir='/allen/programs/braintv/workgroups/cortexmodels/gocker/bob_platform_plots', figname='dg_decoding_performance', Nticks=10, xlim=None, box=False, bar=False, point=False, cre_label_right=False):
 
 
     cre_depth_list = [('Emx1-IRES-Cre',100), ('Slc17a7-IRES2-Cre', 100),('Cux2-CreERT2',100),('Vip-IRES-Cre',100),
@@ -220,7 +220,14 @@ def plot_strip_plot(data_input, area, plot_key, x_label, fig_base_dir='/allen/ai
         if xmax > 0 and xmin <= 0:
             plt.axvline(x=0, lw=1, color='k')
 
-        plt.yticks(range(19), cre_list)
+        if cre_label_right:
+            if area in ['VISrl', 'RL']:
+                plt.yticks(range(19), cre_list)
+            else:
+                plt.yticks([], [])
+        else:
+            plt.yticks(range(19), cre_list)
+
         plt.axhline(y=3.5, lw=7, color='w')
         plt.axhline(y=11.5, lw=7, color='w')
         plt.axhline(y=17.5, lw=7, color='w')

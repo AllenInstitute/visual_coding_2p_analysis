@@ -111,7 +111,7 @@ def paw_plot(sdata=None, sdata_bg=None, cdata=None, cmap=None, clim=None, cmid=N
     ax.set_xlim([-1.2,1.2])
     ax.set_ylim([-1.05,1.35])
 
-def save_figure(fig, fname, formats=['.png','.pdf'], transparent=False, dpi=300, facecolor=None, **kwargs):
+def save_figure(fig, fname, formats=['.pdf'], transparent=False, dpi=300, facecolor=None, **kwargs):
     import matplotlib as mpl
     mpl.rcParams['pdf.fonttype'] = 42
 
@@ -131,7 +131,7 @@ def save_figure(fig, fname, formats=['.png','.pdf'], transparent=False, dpi=300,
             dpi=dpi
         )
 
-def make_pawplot_metric(data_input, metric, stimulus_suffix, clim=None, fig_base_dir='/allen/aibs/mat/gkocker/bob_platform_plots'):
+def make_pawplot_metric(data_input, metric, stimulus_suffix, clim=None, fig_base_dir='/allen/programs/braintv/workgroups/cortexmodels/gocker/bob_platform_plots'):
     '''creates and saves a pawplot for a specified single cell metric
 
 Parameters
@@ -225,7 +225,7 @@ stimulus_suffix: string of the stimulus abbreviation (eg. 'dg','sg','ns')
 
 
 #population pawplot hasn't been tested yet
-def make_pawplot_population(results, filename, clim=None, scale=.005, cmap=None, cstep=0.1, symmetric_cmap=False, cmid=0, fig_base_dir='/allen/aibs/mat/gkocker/bob_platform_plots'):
+def make_pawplot_population(results, filename, clim=None, scale=.005, cmap=None, cstep=0.1, symmetric_cmap=False, cmid=0, fig_base_dir='/allen/programs/braintv/workgroups/cortexmodels/gocker/bob_platform_plots'):
     '''creates and saves a pawplot for a population level metric (eg. with no annulus)
 
 Parameters
