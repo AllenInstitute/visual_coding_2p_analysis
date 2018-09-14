@@ -60,6 +60,25 @@ specimen IDs
     numbercells = len(specimen_ids)
     return stim_table, numbercells, specimen_ids
 
+def get_stimulus_template(session_id, stimulus):
+    '''uses allenSDK to get the stimulus template for the specific stimulus.
+
+Parameters
+----------
+session_id (int)
+stimulus name (string)
+
+Returns
+-------
+stimulus template (numpy array)
+        '''
+    manifest_path = get_manifest_path()
+    from allensdk.core.brain_observatory_cache import BrainObservatoryCache
+    boc = BrainObservatoryCache(manifest_file=manifest_path)
+    data_set = boc.get_ophys_experiment_data(session_id)
+    stim_template = data_set.get_stimulus_template(stimulus)
+    return stim_template
+    
 def get_L0_events(session_id):
     '''gets the L0 event time series for a given session
 
