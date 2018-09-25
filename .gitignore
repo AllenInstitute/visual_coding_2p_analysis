@@ -71,3 +71,5 @@ target/
 
 # weird macos files
 *.DS_Store
+
+visual_coding_2p_analysis/FastLZeroSpikeInference/*
