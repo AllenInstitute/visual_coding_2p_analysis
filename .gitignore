@@ -72,4 +72,8 @@ target/
 # weird macos files
 *.DS_Store
 
+# ignore directory for the LZero code
 visual_coding_2p_analysis/FastLZeroSpikeInference/*
+
+# ignore directory for constructing our specific manifest
+data/*
