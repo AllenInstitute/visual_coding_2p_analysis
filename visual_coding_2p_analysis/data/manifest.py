@@ -70,6 +70,12 @@ def test_json_files(manifest_file):
     assert len(cells)==61371, "Wrong number of cell specimens.  Found "+str(len(cells))
     print "Passed:  ", len(cells), " cell specimens found (expecting 61371)."
 
+    import pandas as pd
+    cell_df = pd.DataFrame(cells)
+    assert len(cell_df)==len(cell_df.cell_specimen_id.unique()),  "len(cell_specimen_df)!=number of unique csids."
+    print "Passed:  len(cell_specimen_df) is of consistent length."
+
+
 if __name__ == '__main__':
 
     MANIFEST_DIR = os.path.join(os.path.dirname(__file__),'data')
