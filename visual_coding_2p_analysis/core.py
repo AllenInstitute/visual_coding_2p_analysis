@@ -28,7 +28,14 @@ save_path
     # elif sys.platform=='linux2':
     #     save_path = r'/allen/programs/braintv/workgroups/nc-ophys/Saskia/Visual Coding Event Analysis'
 
-    raise NotImplementedError("'get_save_path' is no longer necessary.  Retrieve analysis files via boc.get_ophys_experiment_analysis")
+    if sys.platform=='win32':
+        save_path = r"\\allen\programs\braintv\workgroups\cortexmodels\ObservatoryPlatformPaperAnalysis\event_analysis_files_2018_09_25"
+    elif sys.platform=='darwin':
+        save_path = r"/Volumes/programs/braintv/workgroups/cortexmodels/michaelbu/ObservatoryPlatformPaperAnalysis/event_analysis_files_2018_09_25"
+    elif sys.platform=='linux2':
+        save_path = r"/allen/programs/braintv/workgroups/cortexmodels/michaelbu/ObservatoryPlatformPaperAnalysis/event_analysis_files_2018_09_25"
+
+    return save_path
 
     # if sys.platform == 'win32':
     #     save_path = r'\\allen\programs\braintv\workgroups\nc-ophys\ObservatoryPlatformPaperAnalysis\analysis_files_pre_2018_3_29'
