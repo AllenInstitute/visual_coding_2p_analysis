@@ -28,13 +28,22 @@ save_path
     # elif sys.platform=='linux2':
     #     save_path = r'/allen/programs/braintv/workgroups/nc-ophys/Saskia/Visual Coding Event Analysis'
 
-    if sys.platform == 'win32':
-        save_path = r'\\allen\programs\braintv\workgroups\nc-ophys\ObservatoryPlatformPaperAnalysis\analysis_files_pre_2018_3_29'
-    elif sys.platform == 'darwin':
-        save_path = r'/Volumes/programs/braintv/workgroups/nc-ophys/ObservatoryPlatformPaperAnalysis/analysis_files_pre_2018_3_29'
-    elif sys.platform == 'linux2':
-        save_path = '/allen/programs/braintv/workgroups/nc-ophys/ObservatoryPlatformPaperAnalysis/analysis_files_pre_2018_3_29'
+    if sys.platform=='win32':
+        save_path = r"\\allen\programs\braintv\workgroups\cortexmodels\ObservatoryPlatformPaperAnalysis\event_analysis_files_2018_09_25"
+    elif sys.platform=='darwin':
+        save_path = r"/Volumes/programs/braintv/workgroups/cortexmodels/michaelbu/ObservatoryPlatformPaperAnalysis/event_analysis_files_2018_09_25"
+    elif sys.platform=='linux2':
+        save_path = r"/allen/programs/braintv/workgroups/cortexmodels/michaelbu/ObservatoryPlatformPaperAnalysis/event_analysis_files_2018_09_25"
+
     return save_path
+
+    # if sys.platform == 'win32':
+    #     save_path = r'\\allen\programs\braintv\workgroups\nc-ophys\ObservatoryPlatformPaperAnalysis\analysis_files_pre_2018_3_29'
+    # elif sys.platform == 'darwin':
+    #     save_path = r'/Volumes/programs/braintv/workgroups/nc-ophys/ObservatoryPlatformPaperAnalysis/analysis_files_pre_2018_3_29'
+    # elif sys.platform == 'linux2':
+    #     save_path = '/allen/programs/braintv/workgroups/nc-ophys/ObservatoryPlatformPaperAnalysis/analysis_files_pre_2018_3_29'
+    # return save_path
 
 
 def get_stim_table(session_id, stimulus):
@@ -60,6 +69,25 @@ specimen IDs
     numbercells = len(specimen_ids)
     return stim_table, numbercells, specimen_ids
 
+def get_stimulus_template(session_id, stimulus):
+    '''uses allenSDK to get the stimulus template for the specific stimulus.
+
+Parameters
+----------
+session_id (int)
+stimulus name (string)
+
+Returns
+-------
+stimulus template (numpy array)
+        '''
+    manifest_path = get_manifest_path()
+    from allensdk.core.brain_observatory_cache import BrainObservatoryCache
+    boc = BrainObservatoryCache(manifest_file=manifest_path)
+    data_set = boc.get_ophys_experiment_data(session_id)
+    stim_template = data_set.get_stimulus_template(stimulus)
+    return stim_template
+    
 def get_L0_events(session_id):
     '''gets the L0 event time series for a given session
 
@@ -72,21 +100,13 @@ def get_L0_events(session_id):
     l0 event traces (numpy array)
         '''
 
-    # event_path = get_event_path()
-    # event_file = os.path.join(event_path, str(session_id)+'.npz')
-    # print "Loading L0 events from: ", event_file
-    # events = np.load(event_file)['ev']
-    # return events
-
-    print("Loading L0 events for: " + str(session_id))
     manifest_path = get_manifest_path()
     from allensdk.core.brain_observatory_cache import BrainObservatoryCache
     boc = BrainObservatoryCache(manifest_file=manifest_path)
-    data_set = boc.get_ophys_experiment_data(session_id)
-    from l0_analysis import L0_analysis
-    l0 = L0_analysis(data_set)
-    events = l0.get_events()
-    return events
+
+    print("Loading L0 events for: " + str(session_id))
+    # we're now using the builtin events files from the SDK
+    return boc.get_ophys_experiment_events(session_id)
 
 
 def get_manifest_path():
@@ -97,11 +117,11 @@ Returns
 manifest path
         '''
     if sys.platform=='win32':
-        manifest_path = r"\\allen\programs\braintv\workgroups\nc-ophys\ObservatoryPlatformPaperAnalysis\platform_boc_pre_2018_3_16\manifest.json"
+        manifest_path = r"\\allen\programs\braintv\workgroups\cortexmodels\ObservatoryPlatformPaperAnalysis\platform_boc_2018_09_25\manifest.json"
     elif sys.platform=='darwin':
-        manifest_path = r"/Volumes/programs/braintv/workgroups/nc-ophys/ObservatoryPlatformPaperAnalysis/platform_boc_pre_2018_3_16/manifest.json"
+        manifest_path = r"/Volumes/programs/braintv/workgroups/cortexmodels/michaelbu/ObservatoryPlatformPaperAnalysis/platform_boc_2018_09_25/manifest.json"
     elif sys.platform=='linux2':
-        manifest_path = r"/allen/programs/braintv/workgroups/nc-ophys/ObservatoryPlatformPaperAnalysis/platform_boc_pre_2018_3_16/manifest.json"
+        manifest_path = r"/allen/programs/braintv/workgroups/cortexmodels/michaelbu/ObservatoryPlatformPaperAnalysis/platform_boc_2018_09_25/manifest.json"
 
 
     return manifest_path
@@ -114,11 +134,11 @@ Returns
 cache path
         '''
     if sys.platform=='win32':
-        cache_path = r"\\allen\programs\braintv\workgroups\nc-ophys\ObservatoryPlatformPaperAnalysis\events_pre_2018_3_29"
+        cache_path = r"\\allen\programs\braintv\workgroups\cortexmodels\ObservatoryPlatformPaperAnalysis\events_cache_2018_09_25"
     elif sys.platform=='darwin':
-        cache_path = r'/Volumes/programs/braintv/workgroups/nc-ophys/ObservatoryPlatformPaperAnalysis/events_pre_2018_3_29/'
+        cache_path = r'/Volumes/programs/braintv/workgroups/cortexmodels/michaelbu/ObservatoryPlatformPaperAnalysis/events_cache_2018_09_25/'
     elif sys.platform=='linux2':
-        cache_path = r'/allen/programs/braintv/workgroups/nc-ophys/ObservatoryPlatformPaperAnalysis/events_pre_2018_3_29/'
+        cache_path = r'/allen/programs/braintv/workgroups/cortexmodels/michaelbu/ObservatoryPlatformPaperAnalysis/events_cache_2018_09_25/'
     return cache_path
 
 def get_event_path():
@@ -128,13 +148,10 @@ Returns
 -------
 event path
         '''
-    if sys.platform=='win32':
-        event_path = r'\\allen\aibs\technology\allensdk_data\platform_events_pre_2018_3_19\events_2'
-    elif sys.platform=='darwin':
-        event_path = r'/Volumes/aibs/technology/allensdk_data/platform_events_pre_2018_3_19/events_2'
-    elif sys.platform=='linux2':
-        event_path = r'/allen/aibs/technology/allensdk_data/platform_events_pre_2018_3_19/events_2'
-    return event_path
+
+    raise NotImplementedError("'get_event_path' is no longer needed for events.  \
+        Retrieve events via boc.get_ophys_experiment_events or generate new events with the L0_analysis class from l0_analysis.")
+
 
 def get_running_speed(session_id):
     '''uses allenSDK to get the running speed for a specified session

@@ -1,0 +1,64 @@
+#!/usr/bin/env python2
+# -*- coding: utf-8 -*-
+"""
+Created on Thu Mar  1 10:37:44 2018
+
+@author: saskiad
+"""
+
+import os
+import pandas as pd
+from pbstools import PythonJob
+from allensdk.core.brain_observatory_cache import BrainObservatoryCache
+import core
+
+analysis_base_dir = os.path.abspath(os.path.dirname(__file__))
+
+
+dryrun = False # if True, prints what script would be to screen but DOESN'T RUN
+conda_env = 'bob_env'
+conda_dir = '/allen/programs/braintv/workgroups/nc-ophys/Saskia/anaconda/bin/python'
+# dependency_location_list = [os.path.join(analysis_base_dir, 'dependencies/allensdk')]
+
+job_settings = {'queue': 'braintv',
+                'mem': '5g',
+                'priority': 'med',
+                'walltime': '24:00:00',
+                'ppn': 4
+                }
+
+#=======================================================================================================================
+
+# job_config_file_dir = os.path.join(analysis_base_dir, 'job_config_files')
+analysis_file = os.path.join(analysis_base_dir, 'natural_scenes_events.py')
+out_err_dir = os.path.join(analysis_base_dir, 'out_err_nat_scenes')
+if not os.path.exists(out_err_dir):
+    os.mkdir(out_err_dir)
+
+
+job_settings.update({
+                'outfile':os.path.join(out_err_dir, '$PBS_JOBID.out'),
+                'errfile':os.path.join(out_err_dir, '$PBS_JOBID.err'),
+                'email': 'gabeo@alleninstitute.org',
+                'email_options': 'a'
+                })
+manifest_path = core.get_manifest_path()
+print manifest_path
+boc = BrainObservatoryCache(manifest_file=manifest_path)
+exp = pd.DataFrame(boc.get_ophys_experiments())
+exp_ns = exp[exp.session_type=='three_session_B'].id.values
+
+
+for expt in exp_ns:
+    print "Submitting job for lims_id:  ", expt
+
+    jobname = 'natural_scenes_events'
+    job_settings['jobname'] = '%s:%s' % (jobname, expt)
+
+    PythonJob(analysis_file,
+              python_executable=conda_dir,
+              python_args='%s' % expt,
+              conda_env=conda_env,
+              python_path=None,     # ':'.join(dependency_location_list),
+              **job_settings).run(dryrun=dryrun)
+    
