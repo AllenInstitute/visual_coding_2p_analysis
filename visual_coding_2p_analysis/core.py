@@ -29,7 +29,7 @@ save_path
     #     save_path = r'/allen/programs/braintv/workgroups/nc-ophys/Saskia/Visual Coding Event Analysis'
 
     if sys.platform=='win32':
-        save_path = r"\\allen\programs\braintv\workgroups\cortexmodels\ObservatoryPlatformPaperAnalysis\event_analysis_files_2018_09_25"
+        save_path = r"\\allen\programs\braintv\workgroups\cortexmodels\michaelbu\ObservatoryPlatformPaperAnalysis\event_analysis_files_2018_09_25"
     elif sys.platform=='darwin':
         save_path = r"/Volumes/programs/braintv/workgroups/cortexmodels/michaelbu/ObservatoryPlatformPaperAnalysis/event_analysis_files_2018_09_25"
     elif sys.platform=='linux2':
@@ -117,7 +117,7 @@ Returns
 manifest path
         '''
     if sys.platform=='win32':
-        manifest_path = r"\\allen\programs\braintv\workgroups\cortexmodels\ObservatoryPlatformPaperAnalysis\platform_boc_2018_09_25\manifest.json"
+        manifest_path = r"\\allen\programs\braintv\workgroups\cortexmodels\michaelbu\ObservatoryPlatformPaperAnalysis\platform_boc_2018_09_25\manifest.json"
     elif sys.platform=='darwin':
         manifest_path = r"/Volumes/programs/braintv/workgroups/cortexmodels/michaelbu/ObservatoryPlatformPaperAnalysis/platform_boc_2018_09_25/manifest.json"
     elif sys.platform=='linux2':
@@ -134,7 +134,7 @@ Returns
 cache path
         '''
     if sys.platform=='win32':
-        cache_path = r"\\allen\programs\braintv\workgroups\cortexmodels\ObservatoryPlatformPaperAnalysis\events_cache_2018_09_25"
+        cache_path = r"\\allen\programs\braintv\workgroups\cortexmodels\michaelbu\ObservatoryPlatformPaperAnalysis\events_cache_2018_09_25"
     elif sys.platform=='darwin':
         cache_path = r'/Volumes/programs/braintv/workgroups/cortexmodels/michaelbu/ObservatoryPlatformPaperAnalysis/events_cache_2018_09_25/'
     elif sys.platform=='linux2':
