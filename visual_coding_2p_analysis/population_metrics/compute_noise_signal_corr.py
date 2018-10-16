@@ -258,6 +258,26 @@ def plot_mixture(run_states, means, vars):
     plt.legend(loc=0)
 
 
+def main_missing_exps(stim='natural_movie_one', results_dir='/allen/programs/braintv/workgroups/cortexmodels/michaelbu/ObservatoryPlatformPaperAnalysis/noise_signal_correlations_split/regressNone'):
+
+    results_files = os.listdir(results_dir)
+    exps = boc.get_ophys_experiments(stimuli=[stim])
+    exp_ids = [exp['id'] for exp in exps]
+
+    missing_exps = [exp_id for exp_id in exp_ids if str(exp_id)+'_'+stim+'.pkl' not in results_files]
+
+    if 'movie' in stim:
+        window = 10
+    else:
+        window = None
+
+    for n, exp_id in enumerate(missing_exps):
+        print('exp '+str(n)+'/'+str(len(missing_exps)))
+        # main_expt(expt=exp_id, calc_stim=['natural_movie_one', 'natural_movie_two', 'natural_movie_three'], filter_window=None)
+        # main_expt_bootstrap(expt=exp_id, calc_stim=[stim], filter_window=window)
+        main_expt(expt=exp_id, calc_stim=[stim], filter_window=window)
+
+
 def main_expt_bootstrap(expt, num_boots=50, regress_run='none', run_thresh=1., run_window=1., detect_events=True, filter_window=None, corr='pearson', split=True, calc_stim=['natural_scenes', 'static_gratings', 'drifting_gratings', 'natural_movie_one', 'natural_movie_two', 'natural_movie_three', 'spontaneous'], save_dir='/allen/programs/braintv/workgroups/cortexmodels/michaelbu/ObservatoryPlatformPaperAnalysis/noise_signal_correlations_bootstrap_split'):
 
     expt = int(expt)

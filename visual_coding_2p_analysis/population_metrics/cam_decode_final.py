@@ -2931,7 +2931,6 @@ def run_decoding_gratings_expt(expt, standardize=True, detect_events=True, subsa
     # print 'session type: '+str(session_type)+' , elapsed time: '+str(time.time()-start_time)
 
 
-
 if __name__== '__main__':
 
     # run_decoding_numNeurons_expt(expt=sys.argv[1])
