@@ -6,8 +6,8 @@ Created on Mon Apr  2 10:38:25 2018
 @author: saskiad
 with save_figure code from dougo
 """
-import seaborn as sns
 import matplotlib.pyplot as plt
+import seaborn as sns
 import numpy as np
 import core
 
@@ -70,12 +70,12 @@ label: string for the y-axis label
     
     if not np.issubdtype(visp[metric].dtype, np.number):
         visp[metric] = visp[metric].astype(float)
+    visp = visp[['cre_depth',metric,'tld1_name','depth_range']]
     
     with sns.axes_style('whitegrid'):
         fig = plt.figure(figsize=(6,16))
         ax = fig.add_subplot(111)
-        sns.boxplot(y='cre_depth',x=metric,data=visp, palette=cre_depth_palette, order=cre_depth_list, 
-                    saturation=0.7, width=0.7)
+        sns.boxplot(y='cre_depth', x=metric, data=visp, palette=cre_depth_palette, order=cre_depth_list, saturation=0.7, width=0.7)
         for i,c in enumerate(cre_depth_list):
             ax.plot(visp[(visp.tld1_name==c[0])&(visp.depth_range==c[1])][metric].median(), [i], 'bo')
             
@@ -99,7 +99,7 @@ label: string for the y-axis label
         if xlim != None:
             plt.xlim(xlim[0], xlim[1])
         fig.tight_layout()
-        figname = r'/Users/saskiad/Documents/CAM/paper figures/'+metric+'_'+area+'_cre_box'
+        figname = r'/Users/saskiad/Documents/CAM/paper figures/revision/'+metric+'_'+area+'_cre_box'
         save_figure(fig, figname)
 
 def plot_metric_box_cre_depth_sup(data_input,area, metric, stimulus_suffix, label, xlim=None):
@@ -130,6 +130,7 @@ label: string for the y-axis label
 
     responsive = 'responsive_'+stimulus_suffix
     visp = data_input[(data_input['area']==area)&(data_input[responsive]==True)]
+    visp = visp[['cre_depth',metric,'tld1_name','depth_range']]
     
     if not np.issubdtype(visp[metric].dtype, np.number):
         visp[metric] = visp[metric].astype(float)
@@ -162,7 +163,7 @@ label: string for the y-axis label
         if xlim != None:
             plt.xlim(xlim[0], xlim[1])
         fig.tight_layout()
-        figname = r'/Users/saskiad/Documents/CAM/paper figures/'+metric+'_'+area+'_cre_box_sup'
+        figname = r'/Users/saskiad/Documents/CAM/paper figures/revision'+metric+'_'+area+'_cre_box_sup'
         save_figure(fig, figname)
 
  
@@ -192,6 +193,7 @@ label: string for the y-axis label
     cre_depth_palette = sns.color_palette(cre_depth_colors)
 
     visp = data_input[(data_input.area==area)&(data_input[metric_fit]>=0)&(data_input[metric_fit]<=4)]
+    visp = visp[['cre_depth',metric_fit,'tld1_name','depth_range']]
     
     if not np.issubdtype(visp[metric_fit].dtype, np.number):
         visp[metric_fit] = visp[metric_fit].astype(float)
@@ -224,7 +226,7 @@ label: string for the y-axis label
         plt.axhspan(11.5,17.5, color='#DBDBDB', alpha=0.4)
         plt.axhspan(17.5,19, color='#BDBDBD', alpha=0.4)
         fig.tight_layout()
-        figname = r'/Users/saskiad/Documents/CAM/paper figures/'+metric_fit+'_'+area+'_cre_box_sup'
+        figname = r'/Users/saskiad/Documents/CAM/paper figures/revision/'+metric_fit+'_'+area+'_cre_box_sup'
         save_figure(fig, figname)
        
 #def plot_metric_fit_box_cre_depth(data_input,area, metric_fit, label):
@@ -344,7 +346,7 @@ label: string for the y-axis label
         plt.axhspan(11.5,17.5, color='#DBDBDB', alpha=0.4)
         plt.axhspan(17.5,19, color='#BDBDBD', alpha=0.4)
         fig.tight_layout()
-        figname = r'/Users/saskiad/Documents/CAM/paper figures/'+metric+area+'_cre'
+        figname = r'/Users/saskiad/Documents/CAM/paper figures/revision/'+metric+area+'_cre'
         save_figure(fig, figname)
         
 
@@ -408,5 +410,5 @@ label: string for the y-axis label
         if xlim != None:
             plt.xlim(xlim[0], xlim[1])
         fig.tight_layout()
-        figname = r'/Users/saskiad/Documents/CAM/paper figures/'+metric+'_'+area+'_cre_box'
+        figname = r'/Users/saskiad/Documents/CAM/paper figures/revision/'+metric+'_'+area+'_cre_box'
         save_figure(fig, figname)
