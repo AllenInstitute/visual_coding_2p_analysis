@@ -84,3 +84,45 @@ def plot_responsive_areas(exp, area, stimulus_suffix, bar=False):
         fig.tight_layout()
         figname = r'/Users/saskiad/Documents/CAM/paper figures/revision/'+stimulus_suffix+'_responsive_'+area
         save_figure(fig, figname)
+        
+stim_colors={}
+stim_colors['dg'] = '#05728C'
+stim_colors['sg'] = '#3DB1AA'
+stim_colors['ns'] = '#FD9D4D'
+stim_colors['nm'] = '#E35786'
+stim_colors['lsn'] = '#1B378A'
+stim_colors['all'] = 'gray'
+
+
+
+
+def plot_responsive_summary(metrics, stimulus_suffix):
+    areas = ['VISp','VISl','VISal','VISpm','VISam','VISrl']
+    area_labels = ['V1','LM','AL','PM','AM','RL']
+    resp = np.empty((6))
+    if stimulus_suffix=='nm':
+        for i,a in enumerate(areas):
+            subset = metrics[metrics.area==a]
+            resp[i] = len(subset[(subset.responsive_nm1a==True)|(subset.responsive_nm1b==True)|(subset.responsive_nm1c==True)|(subset.responsive_nm2==True)|(subset.responsive_nm3==True)])/float(len(subset))
+        resp*=100
+    else:
+        responsive_stim = 'responsive_'+stimulus_suffix
+        if stimulus_suffix=='dg':
+            reliability_stim = 'reliability_nm1a'
+        else:
+            reliability_stim = 'reliability_nm1b'
+        for i,a in enumerate(areas):
+            resp[i] = len(metrics[(metrics[responsive_stim]==True)&(metrics.area==a)])/float(len(metrics[(metrics.area==a)&np.isfinite(metrics[reliability_stim])]))
+        resp*=100
+    with sns.axes_style('whitegrid'):
+        fig = plt.figure(figsize=(4,4))
+        ax = plt.subplot(111)
+        plt.bar(range(6), resp, color=stim_colors[stimulus_suffix])
+        plt.xticks(range(6), area_labels)
+        plt.ylim(0,70)
+        ax.grid(b=False, axis='x')
+        plt.tick_params(labelsize=18)
+        plt.yticks(range(0,71,10))
+        plt.ylabel("Percent responsive neurons", fontsize=18)
+        plt.tight_layout()
+        save_figure(fig, r'/Users/saskiad/Documents/CAM/paper figures/revision/responsive_'+stimulus_suffix)
